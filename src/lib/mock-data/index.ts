@@ -33,7 +33,7 @@ export const mockWorkspace: Workspace = {
       name: "GitHub",
       provider: "github",
       status: "connected",
-      connectedAt: "2024-01-15",
+      connectedAt: "2026-01-15",
     },
     { id: "i2", name: "Slack", provider: "slack", status: "coming_soon" },
     { id: "i3", name: "Jira", provider: "jira", status: "coming_soon" },
@@ -171,7 +171,7 @@ export const mockBlockers: Blocker[] = [
 
 export const mockWeeklyMetrics: WeeklyMetric[] = [
   {
-    week: "Week 1",
+    week: "Apr 7",
     shippedUpdates: 8,
     stuckPRs: 3,
     openBugs: 8,
@@ -180,7 +180,7 @@ export const mockWeeklyMetrics: WeeklyMetric[] = [
     reviewBottlenecks: 3,
   },
   {
-    week: "Week 2",
+    week: "Apr 14",
     shippedUpdates: 10,
     stuckPRs: 4,
     openBugs: 9,
@@ -189,7 +189,7 @@ export const mockWeeklyMetrics: WeeklyMetric[] = [
     reviewBottlenecks: 4,
   },
   {
-    week: "Week 3",
+    week: "Apr 21",
     shippedUpdates: 9,
     stuckPRs: 5,
     openBugs: 11,
@@ -198,12 +198,12 @@ export const mockWeeklyMetrics: WeeklyMetric[] = [
     reviewBottlenecks: 5,
   },
   {
-    week: "Week 4",
+    week: "Apr 28",
     shippedUpdates: 12,
     stuckPRs: 7,
     openBugs: 13,
     blockers: 3,
-    healthScore: 82,
+    healthScore: 76,
     reviewBottlenecks: 7,
   },
 ];
@@ -322,11 +322,11 @@ export const mockKpiCards: KpiCard[] = [
 
 export const mockWeeklyReport: WeeklyReport = {
   id: "wr1",
-  dateRange: "April 29 – May 5, 2025",
-  generatedAt: "May 5, 2025",
+  dateRange: "Apr 28 – May 4, 2026",
+  generatedAt: "May 5, 2026",
   summary:
     "Engineering is mostly healthy this week. The team shipped 12 meaningful updates, but review delays in api-service and mobile-app may slow next week's delivery. Leadership should focus on unblocking code review ownership in api-service.",
-  healthScore: 82,
+  healthScore: 76,
   healthStatus: "watch",
   deliveryConfidence: 78,
   shipped: [
@@ -363,7 +363,7 @@ export const mockPullRequests: PullRequest[] = [
     repository: "payment-service",
     author: "Sarah Chen",
     status: "open",
-    createdAt: "2025-05-02",
+    createdAt: "2026-05-02",
     waitingHours: 72,
   },
   {
@@ -372,8 +372,8 @@ export const mockPullRequests: PullRequest[] = [
     repository: "api-service",
     author: "Marcus Lee",
     status: "in_review",
-    createdAt: "2025-05-01",
-    reviewedAt: "2025-05-03",
+    createdAt: "2026-05-01",
+    reviewedAt: "2026-05-03",
     waitingHours: 48,
   },
   {
@@ -382,9 +382,9 @@ export const mockPullRequests: PullRequest[] = [
     repository: "web-app",
     author: "Priya Patel",
     status: "merged",
-    createdAt: "2025-04-30",
-    reviewedAt: "2025-05-01",
-    mergedAt: "2025-05-02",
+    createdAt: "2026-04-30",
+    reviewedAt: "2026-05-01",
+    mergedAt: "2026-05-02",
     waitingHours: 0,
   },
 ];
@@ -397,7 +397,7 @@ export const mockIssues: Issue[] = [
     type: "bug",
     severity: "high",
     status: "open",
-    createdAt: "2025-05-03",
+    createdAt: "2026-05-03",
   },
   {
     id: "i2",
@@ -406,7 +406,7 @@ export const mockIssues: Issue[] = [
     type: "bug",
     severity: "high",
     status: "in_progress",
-    createdAt: "2025-05-01",
+    createdAt: "2026-05-01",
   },
   {
     id: "i3",
@@ -415,6 +415,6 @@ export const mockIssues: Issue[] = [
     type: "feature",
     severity: "medium",
     status: "open",
-    createdAt: "2025-04-28",
+    createdAt: "2026-04-28",
   },
 ];

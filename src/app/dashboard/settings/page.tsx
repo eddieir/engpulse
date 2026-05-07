@@ -135,7 +135,7 @@ export default function SettingsPage() {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-slate-900 dark:text-white">Starter Plan</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">€49/month · Renews June 5, 2025</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">€49/month · Renews June 5, 2026</p>
             <ul className="mt-3 space-y-1.5">
               {["Up to 10 repositories", "Weekly automated reports", "Email delivery", "Shareable leadership link"].map((f) => (
                 <li key={f} className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
