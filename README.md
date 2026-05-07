@@ -116,14 +116,16 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## Deploy to Vercel
+## Deploy to Netlify
 
 ```bash
-npm install -g vercel
-vercel
+npm install -g netlify-cli
+netlify init
+netlify deploy --build
+netlify deploy --prod
 ```
 
-Or connect your GitHub repo in the Vercel dashboard for automatic deployments.
+Or connect your GitHub repo in the Netlify dashboard for automatic deployments (build command: `npm run build`).
 
 ---
 
