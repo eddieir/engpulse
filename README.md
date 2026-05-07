@@ -1,36 +1,190 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EngPulse
 
-## Getting Started
+**Engineering clarity for non-technical leaders.**
 
-First, run the development server:
+EngPulse turns GitHub activity into plain-English weekly reports that CEOs, CTOs, and founders can understand in 30 seconds.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## The Problem
+
+Most engineering tools are built for engineers — dashboards full of technical jargon, raw metrics, and charts that don't answer the questions leadership actually asks:
+
+- Are we moving fast enough?
+- What is blocking delivery?
+- Are bugs increasing?
+- What should I tell the CEO or board this week?
+
+EngPulse solves this by translating GitHub activity into **plain-English leadership insight**.
+
+---
+
+## Target Users
+
+- CTOs at startups with 5–50 engineers
+- VPs of Engineering, Engineering Managers
+- Technical Founders
+- Non-technical CEOs who need visibility into engineering progress
+- Startup operators preparing weekly updates for boards
+
+---
+
+## Features (MVP)
+
+- **Landing page** — Marketing site with problem/solution/pricing
+- **Onboarding flow** — 5-step guided setup with GitHub connection
+- **Dashboard** — Full engineering leadership dashboard
+  - CEO Summary with plain-English status
+  - Engineering Health Score (0–100) with breakdown
+  - 4 KPI cards with click-to-explain detail modals
+  - Board-ready Q&A section (6 leadership questions answered)
+  - Active blockers with impact and recommended action
+  - Repository health table
+  - 4-week trend charts
+- **CEO / Engineering view toggle**
+- **Weekly Leadership Report** — Shareable, print-ready
+- **Blockers page** — Prioritized by severity
+- **Trends page** — Historical charts with weekly breakdown
+- **Settings** — Workspace, report, integration, billing settings
+- **Pricing page** — Free, Starter (€49/mo), Team (€149/mo), Enterprise
+- **LinkedIn Launch Kit** — 5 ready-to-publish posts with strategy
+- **Dark / Light theme toggle**
+- **Responsive design** — Mobile, tablet, desktop
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS v4 |
+| Icons | Lucide React |
+| Charts | Recharts |
+| State | Zustand |
+| Themes | next-themes |
+| Data | Mock data layer (ready for GitHub API) |
+
+---
+
+## Project Structure
+
+```
+engpulse/
+├── src/
+│   ├── app/                          # Next.js pages
+│   │   ├── page.tsx                  # Landing page
+│   │   ├── demo/page.tsx             # Interactive demo
+│   │   ├── onboarding/page.tsx       # 5-step onboarding
+│   │   ├── pricing/page.tsx          # Pricing
+│   │   ├── launch-kit/page.tsx       # LinkedIn launch kit
+│   │   └── dashboard/
+│   │       ├── layout.tsx            # Sidebar + nav layout
+│   │       ├── page.tsx              # Overview
+│   │       ├── repositories/page.tsx
+│   │       ├── report/page.tsx
+│   │       ├── blockers/page.tsx
+│   │       ├── trends/page.tsx
+│   │       └── settings/page.tsx
+│   ├── components/
+│   │   ├── layout/                   # ThemeProvider, Sidebar, TopNav, ThemeToggle
+│   │   ├── dashboard/                # HealthScoreCard, KpiCard, BlockerCard, etc.
+│   │   ├── landing/                  # Header, Footer
+│   │   └── shared/                   # StatusBadge, CopyButton, EmptyState
+│   ├── lib/
+│   │   ├── mock-data/index.ts        # Realistic mock data
+│   │   ├── services/                 # githubClient, metricsService, insightGenerator
+│   │   └── utils/index.ts            # Helpers and color utilities
+│   ├── store/useAppStore.ts          # Zustand state
+│   └── types/index.ts                # TypeScript types
+└── README.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Running Locally
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+git clone https://github.com/your-username/engpulse.git
+cd engpulse
+npm install
+npm run dev
+```
 
-## Learn More
+Open [http://localhost:3000](http://localhost:3000)
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy to Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install -g vercel
+vercel
+```
 
-## Deploy on Vercel
+Or connect your GitHub repo in the Vercel dashboard for automatic deployments.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Environment Variables
+
+```bash
+# .env.local (not required for MVP — all mock data)
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+GITHUB_REDIRECT_URI=http://localhost:3000/api/auth/callback
+```
+
+---
+
+## Adding Real GitHub Data
+
+1. **Implement OAuth** — Add `/api/auth/github` and `/api/auth/callback` routes
+2. **Store token securely** — Database or encrypted session
+3. **Replace mock returns** in `src/lib/services/githubClient.ts` — each function has a TODO comment showing the real API call
+4. **Replace mock imports** in pages — swap `mockRepositories` etc. for async service calls
+
+---
+
+## Integrations Roadmap
+
+| Integration | Status |
+|-------------|--------|
+| GitHub | ✅ Live (mock, OAuth-ready) |
+| Slack | 🔜 Coming soon |
+| Jira | 🔜 Coming soon |
+| Linear | 🔜 Coming soon |
+| Notion | 🔜 Coming soon |
+| GitLab | 🔜 Coming soon |
+| Bitbucket | 🔜 Coming soon |
+| Azure DevOps | 🔜 Coming soon |
+
+---
+
+## Pricing Hypothesis
+
+- **Free** — 1 repo, basic summary, demo data
+- **Starter €49/mo** — Up to 10 repos, automated reports, email, shareable link
+- **Team €149/mo** — Up to 50 repos, multi-team, Slack (soon), custom tone
+- **Enterprise** — Custom integrations, SSO, dedicated support
+
+Validation target: 10 paying Starter customers = €490 MRR
+
+---
+
+## Next 7-Day Execution Plan
+
+| Day | Task |
+|-----|------|
+| 1 | Deploy to Vercel, post demo link on LinkedIn |
+| 2 | DM 10 CTOs/VPs, collect feedback |
+| 3 | Add GitHub OAuth (Octokit) |
+| 4 | Replace mock data with real GitHub API |
+| 5 | Test with 2 real GitHub organizations |
+| 6 | Add email report delivery |
+| 7 | Launch announcement, collect waitlist |
+
+---
+
+**EngPulse** — Engineering clarity for non-technical leaders.
