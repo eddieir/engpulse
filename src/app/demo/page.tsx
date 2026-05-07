@@ -29,14 +29,14 @@ export default function DemoPage() {
             <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
             <p className="text-sm text-blue-700 dark:text-blue-300">
               <strong>Live demo</strong> — This dashboard uses realistic mock data for Acme Cloud.
-              <Link href="/onboarding" className="underline ml-1">Connect your GitHub</Link> to see real data.
+              <Link href="/beta" className="underline ml-1">Connect your GitHub</Link> to see real data.
             </p>
           </div>
           <Link
-            href="/onboarding"
+            href="/beta"
             className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
           >
-            Get started free
+            Join beta
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -45,7 +45,7 @@ export default function DemoPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Overview</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Acme Cloud · Week of April 29 – May 5, 2025</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Acme Cloud · Week of Apr 28 – May 4, 2026</p>
           </div>
           <HealthBadge status={mockWeeklyReport.healthStatus} />
         </div>
@@ -99,10 +99,10 @@ export default function DemoPage() {
           <h2 className="text-2xl font-bold mb-2">Ready to see your real engineering data?</h2>
           <p className="text-blue-100 mb-6">Connect GitHub and get your first leadership report in minutes.</p>
           <Link
-            href="/onboarding"
+            href="/beta"
             className="inline-flex items-center gap-2 px-7 py-3.5 text-base font-semibold text-blue-600 bg-white hover:bg-blue-50 rounded-xl transition-colors"
           >
-            Start free
+            Join beta
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
