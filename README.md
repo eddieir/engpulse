@@ -171,20 +171,5 @@ GITHUB_REDIRECT_URI=http://localhost:3000/api/auth/callback
 
 Validation target: 10 paying Starter customers = €490 MRR
 
----
-
-## Next 7-Day Execution Plan
-
-| Day | Task |
-|-----|------|
-| 1 | Deploy to Vercel, post demo link on LinkedIn |
-| 2 | DM 10 CTOs/VPs, collect feedback |
-| 3 | Add GitHub OAuth (Octokit) |
-| 4 | Replace mock data with real GitHub API |
-| 5 | Test with 2 real GitHub organizations |
-| 6 | Add email report delivery |
-| 7 | Launch announcement, collect waitlist |
-
----
 
 **EngPulse** — Engineering clarity for non-technical leaders.
