@@ -400,7 +400,7 @@ export const en = {
       role: "Your role",
       teamSize: "Engineering team size",
       repos: "How many GitHub repositories?",
-      currentMethod: "How do you currently report engineering activity?",
+      currentMethod: "Current reporting method",
       pain: "What is your biggest reporting pain point?",
       submit: "Request beta access",
       success:

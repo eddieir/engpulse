@@ -118,7 +118,11 @@ export function PricingSection({ showHeader = true }: { showHeader?: boolean }) 
               </ul>
 
               <Link
-                href="/beta"
+                href={
+                  plan.name === "Free Beta"
+                    ? "/beta"
+                    : `/pricing/contact?plan=${encodeURIComponent(plan.name)}`
+                }
                 className={cn(
                   "flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all",
                   plan.highlight
@@ -126,7 +130,7 @@ export function PricingSection({ showHeader = true }: { showHeader?: boolean }) 
                     : "bg-blue-600 text-white hover:bg-blue-500"
                 )}
               >
-                {plan.cta}
+                {plan.name === "Free Beta" ? "Join free beta" : "Contact pricing team"}
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </motion.div>
