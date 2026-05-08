@@ -25,86 +25,95 @@ export default async function handler(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: "UNAUTHORIZED", requestId }, { status: 401 });
   }
 
-  // Env inventory — booleans only, never values
-  const envVars = [
-    "NEXT_PUBLIC_SITE_URL",
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "RESEND_API_KEY",
-    "EMAIL_FROM",
-    "PRICING_TEAM_EMAIL",
-    "ADMIN_DEBUG_KEY",
-    "NEXT_PUBLIC_NETLIFY_FUNCTIONS_BASE",
-  ] as const;
+  // ── Database env (required) ───────────────────────────────────────────────
+  const dbRequired = {
+    NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+  };
+  const dbEnvReady = Object.values(dbRequired).every(Boolean);
 
-  const environment: Record<string, boolean> = {};
-  const missingEnv: string[] = [];
-  for (const key of envVars) {
-    const present = !!process.env[key];
-    environment[key] = present;
-    if (!present) missingEnv.push(key);
-  }
+  // ── Email env (optional) ──────────────────────────────────────────────────
+  const emailOptional = {
+    RESEND_API_KEY: !!process.env.RESEND_API_KEY,
+    EMAIL_FROM: !!process.env.EMAIL_FROM,
+    PRICING_TEAM_EMAIL: !!process.env.PRICING_TEAM_EMAIL,
+  };
+  const emailEnvReady = Object.values(emailOptional).every(Boolean);
 
-  if (missingEnv.length > 0) {
-    log.warn("env_vars_missing", { missing: missingEnv });
+  // ── Other env ─────────────────────────────────────────────────────────────
+  const siteEnv = {
+    NEXT_PUBLIC_SITE_URL: !!process.env.NEXT_PUBLIC_SITE_URL,
+    ADMIN_DEBUG_KEY: !!process.env.ADMIN_DEBUG_KEY,
+    NEXT_PUBLIC_NETLIFY_FUNCTIONS_BASE: !!process.env.NEXT_PUBLIC_NETLIFY_FUNCTIONS_BASE,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  };
+
+  const missingDb = Object.entries(dbRequired).filter(([, v]) => !v).map(([k]) => k);
+  const missingEmail = Object.entries(emailOptional).filter(([, v]) => !v).map(([k]) => k);
+
+  if (missingDb.length > 0) {
+    log.error("database_env_missing", { missing: missingDb });
   } else {
-    log.info("env_vars_ok");
+    log.info("database_env_ok");
+  }
+  if (missingEmail.length > 0) {
+    log.warn("email_env_missing_optional", { missing: missingEmail });
+  } else {
+    log.info("email_env_ok");
   }
 
-  // Supabase connectivity + table checks
-  const supabaseResult: {
-    connected: boolean;
-    tables: Record<string, boolean>;
-    error?: string;
-  } = { connected: false, tables: {} };
+  // ── Supabase connectivity + table checks ──────────────────────────────────
+  const tables: Record<string, boolean> = {};
+  let supabaseConnected = false;
+  let supabaseError: string | undefined;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !key) {
-    supabaseResult.error = "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY";
-    log.error("supabase_skipped", { reason: supabaseResult.error });
+  if (!dbEnvReady) {
+    supabaseError = `Missing required env: ${missingDb.join(", ")}`;
+    log.error("supabase_skipped", { reason: supabaseError });
   } else {
     try {
-      const supabase = createClient(url, key, { auth: { persistSession: false } });
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false } }
+      );
 
       for (const table of TABLES) {
         try {
           const { error } = await supabase.from(table).select("id").limit(1);
-          supabaseResult.tables[table] = !error;
+          tables[table] = !error;
           if (error) {
             log.error(`table_check_failed_${table}`, { error: error.message, code: error.code });
           } else {
             log.info(`table_check_ok_${table}`);
           }
         } catch (e) {
-          supabaseResult.tables[table] = false;
+          tables[table] = false;
           log.error(`table_check_exception_${table}`, {
             error: e instanceof Error ? e.message : String(e),
           });
         }
       }
 
-      supabaseResult.connected = Object.values(supabaseResult.tables).every(Boolean);
-      log.info("supabase_check_complete", { connected: supabaseResult.connected });
+      supabaseConnected = Object.values(tables).every(Boolean);
+      log.info("supabase_check_complete", { connected: supabaseConnected });
     } catch (e) {
-      supabaseResult.error = e instanceof Error ? e.message : String(e);
-      log.error("supabase_exception", { error: supabaseResult.error });
+      supabaseError = e instanceof Error ? e.message : String(e);
+      log.error("supabase_exception", { error: supabaseError });
     }
   }
 
-  // Resend configured check (no actual send — just verify key is present)
-  const resendKey = process.env.RESEND_API_KEY;
-  const resendConfigured = !!resendKey;
+  // ── Resend configured check ───────────────────────────────────────────────
+  let resendConfigured = false;
   let resendError: string | undefined;
 
-  if (!resendConfigured) {
+  if (!process.env.RESEND_API_KEY) {
     resendError = "RESEND_API_KEY not set";
     log.warn("resend_not_configured");
   } else {
-    // Lightweight probe: instantiate client only, no email sent
     try {
-      new Resend(resendKey);
+      new Resend(process.env.RESEND_API_KEY);
+      resendConfigured = true;
       log.info("resend_configured");
     } catch (e) {
       resendError = e instanceof Error ? e.message : String(e);
@@ -112,27 +121,29 @@ export default async function handler(request: Request): Promise<Response> {
     }
   }
 
-  const allOk =
-    missingEnv.length === 0 && supabaseResult.connected && resendConfigured && !resendError;
+  // ok = database is fully ready (env + tables)
+  const ok = dbEnvReady && supabaseConnected;
 
-  log.info("health_check_complete", { ok: allOk });
+  log.info("health_check_complete", { ok, db_ready: dbEnvReady, email_ready: emailEnvReady });
 
   return Response.json(
     {
-      ok: allOk,
+      ok,
       requestId,
-      environment,
-      missingEnv,
-      supabase: {
-        connected: supabaseResult.connected,
-        tables: supabaseResult.tables,
-        ...(supabaseResult.error ? { error: supabaseResult.error } : {}),
+      database: {
+        ready: dbEnvReady && supabaseConnected,
+        required: dbRequired,
+        tables,
+        ...(supabaseError ? { error: supabaseError } : {}),
       },
-      resend: {
-        configured: resendConfigured,
+      email: {
+        ready: emailEnvReady && resendConfigured,
+        optional: emailOptional,
+        resend_configured: resendConfigured,
         ...(resendError ? { error: resendError } : {}),
       },
+      site: siteEnv,
     },
-    { status: allOk ? 200 : 503 }
+    { status: ok ? 200 : 503 }
   );
 }

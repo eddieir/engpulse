@@ -43,6 +43,7 @@ export function BetaPageClient() {
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [emailSent, setEmailSent] = useState(true);
+  const [emailWarning, setEmailWarning] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormState>({
@@ -78,6 +79,7 @@ export function BetaPageClient() {
     setErrorMsg("");
     setFieldErrors({});
     setRequestId(null);
+    setEmailWarning(null);
     track("beta_submitted", { plan: form.selected_plan, role: form.role });
 
     try {
@@ -104,6 +106,7 @@ export function BetaPageClient() {
 
       const sent = data.email_sent !== false;
       setEmailSent(sent);
+      if (data.warning) setEmailWarning(data.warning as string);
       if (sent) track("verification_email_sent");
       setStatus("success");
     } catch {
@@ -193,20 +196,25 @@ export function BetaPageClient() {
                       Your beta request for <strong>{form.email}</strong> was saved successfully.
                     </p>
                     <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 mb-2">
-                      We could not send the verification email right now. Please contact us at{" "}
-                      <a href="mailto:support@engpulse.io" className="underline font-medium">
-                        support@engpulse.io
-                      </a>{" "}
-                      to activate your access.
+                      {emailWarning === "EMAIL_NOT_CONFIGURED"
+                        ? <>Your request was saved, but the verification email could not be sent. Please contact{" "}
+                            <a href="mailto:peyman.iravani@gmail.com" className="underline font-medium">support@engpulse.io</a>
+                            {requestId ? <> with reference: <span className="font-mono">{requestId}</span></> : null}.
+                          </>
+                        : <>We could not send the verification email right now. Please contact{" "}
+                            <a href="mailto:peyman.iravani@gmail.com" className="underline font-medium">support@engpulse.io</a>
+                            {" "}to activate your access.
+                          </>
+                      }
                     </p>
-                    {requestId && (
-                      <p className="text-xs text-amber-600 dark:text-amber-500 font-mono mb-6">
+                    {requestId && emailWarning !== "EMAIL_NOT_CONFIGURED" && (
+                      <p className="text-xs text-amber-600 dark:text-amber-500 font-mono mb-2">
                         Reference: {requestId}
                       </p>
                     )}
                     <Link
                       href="/demo"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-colors"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-colors mt-4"
                     >
                       Preview demo
                       <ArrowRight className="w-4 h-4" />

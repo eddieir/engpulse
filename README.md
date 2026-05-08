@@ -67,6 +67,60 @@ EngPulse solves this by translating GitHub activity into **plain-English leaders
 
 ---
 
+## Required Netlify Environment Variables
+
+### Database (hard-required — forms fail without these)
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (client-side) |
+
+### Email (optional — forms still save to DB without these)
+
+| Variable | Description |
+|---|---|
+| `RESEND_API_KEY` | Resend API key for sending emails |
+| `EMAIL_FROM` | Sender address e.g. `EngPulse <noreply@engpulse.io>` |
+| `PRICING_TEAM_EMAIL` | Internal recipient for pricing inquiry notifications |
+
+### Site
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_SITE_URL` | Public URL e.g. `https://engplus.netlify.app` (used in email links) |
+| `NEXT_PUBLIC_NETLIFY_FUNCTIONS_BASE` | Set to `/.netlify/functions` in Netlify prod |
+
+### Debug
+
+| Variable | Description |
+|---|---|
+| `ADMIN_DEBUG_KEY` | Any secret string — gates the `/internal/debug` panel and health-check endpoint |
+
+### Behavior when config is partial
+
+| State | Behavior |
+|---|---|
+| DB env missing | `CONFIG_ERROR` returned — form submission blocked |
+| Email env missing | Form saves to DB, returns `warning: "EMAIL_NOT_CONFIGURED"` — user sees amber success |
+| Email send fails (env present) | Form saves to DB, returns `warning: "EMAIL_FAILED"` — user sees amber success |
+
+### Production deployment checklist
+
+- [ ] Set all database env vars in Netlify Dashboard → Site Settings → Environment Variables
+- [ ] Set `NEXT_PUBLIC_NETLIFY_FUNCTIONS_BASE=/.netlify/functions`
+- [ ] Set `ADMIN_DEBUG_KEY` to any secret string
+- [ ] Trigger a new deploy
+- [ ] Run health-check: `curl -H "x-debug-key: YOUR_KEY" https://engplus.netlify.app/.netlify/functions/health-check`
+- [ ] Confirm `database.ready: true` and all tables show `true`
+- [ ] Submit the pricing form — confirm row appears in Supabase `pricing_inquiries` table
+- [ ] Submit the beta form — confirm row appears in Supabase `beta_requests` table
+- [ ] If Resend is configured, confirm confirmation emails are received
+- [ ] Run the SQL migrations in `supabase/migrations/001_initial.sql` if tables are missing
+
+---
+
 ## Routes
 
 | Route | Description | Visibility |

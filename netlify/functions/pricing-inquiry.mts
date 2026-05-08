@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { createLogger, makeRequestId } from "./_shared/logger";
-import { validateEnv, ENV_DB, ENV_EMAIL } from "./_shared/env";
+import { validateDatabaseEnv, validatePricingEmailEnv } from "./_shared/env";
 
 const FN = "pricing-inquiry";
 
@@ -184,11 +184,11 @@ export default async function handler(request: Request): Promise<Response> {
 
   // 8–10. env check
   log.info("env_check_start");
-  const dbEnv = validateEnv([...ENV_DB]);
-  const emailEnv = validateEnv([...ENV_EMAIL]);
+  const dbEnv = validateDatabaseEnv();
+  const emailEnv = validatePricingEmailEnv();
 
   if (!dbEnv.ok) {
-    log.error("env_check_failed", { missing: dbEnv.missing });
+    log.error("database_env_missing", { missing: dbEnv.missing });
     return jsonFail(
       requestId,
       503,
@@ -197,7 +197,7 @@ export default async function handler(request: Request): Promise<Response> {
     );
   }
   if (!emailEnv.ok) {
-    log.warn("env_check_email_missing", { missing: emailEnv.missing });
+    log.warn("email_env_missing_continue_without_email", { missing: emailEnv.missing });
   }
   log.info("env_check_success", { db: true, email: emailEnv.ok });
 
@@ -254,38 +254,47 @@ export default async function handler(request: Request): Promise<Response> {
   }
   log.info("pricing_insert_success", { id: inquiry.id });
 
-  // 16–18. user confirmation email (non-blocking)
-  log.info("user_email_send_start");
-  try {
-    await sendConfirmationEmail(emailStr, String(full_name).trim(), String(selected_plan));
-    log.info("user_email_send_success");
-  } catch (e) {
-    log.error("user_email_send_failed", {
-      error: e instanceof Error ? e.message : String(e),
-    });
-  }
+  // 16–21. emails (non-blocking — DB is already saved)
+  let emailsAttempted = false;
+  let emailWarning: string | undefined;
 
-  // 19–21. internal notification (non-blocking)
-  log.info("internal_email_send_start");
-  try {
-    await sendInternalNotification({
-      full_name: String(full_name).trim(),
-      email: emailStr,
-      company: String(company).trim(),
-      role: String(role),
-      selected_plan: String(selected_plan),
-      team_size: team_size ? String(team_size) : undefined,
-      repo_count: repo_count ? String(repo_count) : undefined,
-      current_reporting_tool: current_reporting_tool
-        ? String(current_reporting_tool)
-        : undefined,
-      message: message ? String(message) : undefined,
-    });
-    log.info("internal_email_send_success");
-  } catch (e) {
-    log.error("internal_email_send_failed", {
-      error: e instanceof Error ? e.message : String(e),
-    });
+  if (!emailEnv.ok) {
+    log.warn("email_send_skipped_not_configured", { missing: emailEnv.missing });
+    emailWarning = "EMAIL_NOT_CONFIGURED";
+  } else {
+    emailsAttempted = true;
+
+    log.info("user_email_send_start");
+    try {
+      await sendConfirmationEmail(emailStr, String(full_name).trim(), String(selected_plan));
+      log.info("user_email_send_success");
+    } catch (e) {
+      log.error("user_email_send_failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+
+    log.info("internal_email_send_start");
+    try {
+      await sendInternalNotification({
+        full_name: String(full_name).trim(),
+        email: emailStr,
+        company: String(company).trim(),
+        role: String(role),
+        selected_plan: String(selected_plan),
+        team_size: team_size ? String(team_size) : undefined,
+        repo_count: repo_count ? String(repo_count) : undefined,
+        current_reporting_tool: current_reporting_tool
+          ? String(current_reporting_tool)
+          : undefined,
+        message: message ? String(message) : undefined,
+      });
+      log.info("internal_email_send_success");
+    } catch (e) {
+      log.error("internal_email_send_failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
   }
 
   // 22–24. audit event (fire-and-forget)
@@ -296,11 +305,20 @@ export default async function handler(request: Request): Promise<Response> {
       entity_type: "pricing_inquiry",
       entity_id: inquiry.id,
       email: emailStr,
-      metadata: { plan: selected_plan, requestId },
+      metadata: { plan: selected_plan, emails_attempted: emailsAttempted, requestId },
     });
     if (error) log.warn("audit_event_failed", { error: error.message });
     else log.info("audit_event_success");
   })();
+
+  if (emailWarning === "EMAIL_NOT_CONFIGURED") {
+    log.warn("pricing_request_partial_success", { warning: emailWarning });
+    return jsonOk(
+      requestId,
+      "Your pricing request was saved. Our team will contact you soon.",
+      { warning: "EMAIL_NOT_CONFIGURED" }
+    );
+  }
 
   log.info("pricing_request_success");
   return jsonOk(

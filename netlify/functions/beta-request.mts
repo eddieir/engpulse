@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { randomBytes, createHash } from "crypto";
 import { createLogger, makeRequestId } from "./_shared/logger";
-import { validateEnv, ENV_DB, ENV_EMAIL } from "./_shared/env";
+import { validateDatabaseEnv, validateEmailEnv } from "./_shared/env";
 
 const FN = "beta-request";
 
@@ -165,11 +165,11 @@ export default async function handler(request: Request): Promise<Response> {
 
   // 9–11. env check
   log.info("env_check_start");
-  const dbEnv = validateEnv([...ENV_DB]);
-  const emailEnv = validateEnv([...ENV_EMAIL]);
+  const dbEnv = validateDatabaseEnv();
+  const emailEnv = validateEmailEnv();
 
   if (!dbEnv.ok) {
-    log.error("env_check_failed", { missing: dbEnv.missing });
+    log.error("database_env_missing", { missing: dbEnv.missing });
     return jsonFail(
       requestId,
       503,
@@ -178,8 +178,7 @@ export default async function handler(request: Request): Promise<Response> {
     );
   }
   if (!emailEnv.ok) {
-    log.warn("env_check_email_missing", { missing: emailEnv.missing });
-    // email will fail gracefully below — do not block DB save
+    log.warn("email_env_missing_continue_without_email", { missing: emailEnv.missing });
   }
   log.info("env_check_success", { db: true, email: emailEnv.ok });
 
@@ -305,16 +304,25 @@ export default async function handler(request: Request): Promise<Response> {
   log.info("token_insert_success");
 
   // 23–25. email send (non-blocking — DB is already saved)
-  log.info("email_send_start");
-  let emailSent = true;
-  try {
-    await sendVerificationEmail(emailStr, String(full_name).trim(), rawToken);
-    log.info("email_send_success");
-  } catch (emailErr) {
-    emailSent = false;
-    log.error("email_send_failed", {
-      error: emailErr instanceof Error ? emailErr.message : String(emailErr),
-    });
+  let emailSent = false;
+  let emailWarning: string | undefined;
+
+  if (!emailEnv.ok) {
+    // Env not configured — skip send entirely, return known warning
+    log.warn("email_send_skipped_not_configured", { missing: emailEnv.missing });
+    emailWarning = "EMAIL_NOT_CONFIGURED";
+  } else {
+    log.info("email_send_start");
+    try {
+      await sendVerificationEmail(emailStr, String(full_name).trim(), rawToken);
+      emailSent = true;
+      log.info("email_send_success");
+    } catch (emailErr) {
+      emailWarning = "EMAIL_FAILED";
+      log.error("email_send_failed", {
+        error: emailErr instanceof Error ? emailErr.message : String(emailErr),
+      });
+    }
   }
 
   // 26–28. audit event (fire-and-forget)
@@ -332,8 +340,17 @@ export default async function handler(request: Request): Promise<Response> {
   })();
 
   // 29–30. final response
-  if (!emailSent) {
-    log.warn("beta_request_partial_success", { email_sent: false });
+  if (emailWarning === "EMAIL_NOT_CONFIGURED") {
+    log.warn("beta_request_partial_success", { email_sent: false, warning: emailWarning });
+    return jsonOk(
+      requestId,
+      "Your request was saved, but the verification email could not be sent. Please contact support.",
+      { email_sent: false, warning: "EMAIL_NOT_CONFIGURED" }
+    );
+  }
+
+  if (emailWarning === "EMAIL_FAILED") {
+    log.warn("beta_request_partial_success", { email_sent: false, warning: emailWarning });
     return jsonOk(
       requestId,
       "Your request was saved, but we could not send the verification email. Please contact support.",
