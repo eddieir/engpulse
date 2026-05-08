@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
   if (!emailSent) {
     return ok(
       "Your request was saved, but we could not send the verification email. Please contact support.",
-      { email_sent: false }
+      { email_sent: false, warning: "EMAIL_FAILED" }
     );
   }
 

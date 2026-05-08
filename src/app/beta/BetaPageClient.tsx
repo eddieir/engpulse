@@ -40,6 +40,7 @@ export function BetaPageClient() {
   const [errorCode, setErrorCode] = useState<ErrorCode>("generic");
   const [errorMsg, setErrorMsg] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [emailSent, setEmailSent] = useState(true);
 
   const [form, setForm] = useState<FormState>({
     full_name: "",
@@ -76,7 +77,11 @@ export function BetaPageClient() {
     track("beta_submitted", { plan: form.selected_plan, role: form.role });
 
     try {
-      const res = await fetch("/api/beta/submit", {
+      const base = process.env.NEXT_PUBLIC_NETLIFY_FUNCTIONS_BASE || "";
+      const endpoint = base
+        ? `${base}/beta-request`
+        : "/api/beta/submit";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -91,7 +96,9 @@ export function BetaPageClient() {
         return;
       }
 
-      track("verification_email_sent");
+      const sent = data.email_sent !== false;
+      setEmailSent(sent);
+      if (sent) track("verification_email_sent");
       setStatus("success");
     } catch {
       setErrorCode("generic");
@@ -146,25 +153,55 @@ export function BetaPageClient() {
           >
             {status === "success" ? (
               <div className="text-center py-8">
-                <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-7 h-7 text-blue-600 dark:text-blue-400" />
-                </div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                  Check your email to activate access.
-                </h2>
-                <p className="text-slate-600 dark:text-slate-400 mb-2">
-                  We sent a verification link to <strong>{form.email}</strong>.
-                </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                  Click the link to activate your 7-day EngPulse demo access. The link expires in 24 hours.
-                </p>
-                <Link
-                  href="/demo"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-colors"
-                >
-                  Preview demo while you wait
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                {emailSent ? (
+                  <>
+                    <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center mx-auto mb-4">
+                      <Mail className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                      Check your email to activate access.
+                    </h2>
+                    <p className="text-slate-600 dark:text-slate-400 mb-2">
+                      We sent a verification link to <strong>{form.email}</strong>.
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                      Click the link to activate your 7-day EngPulse demo access. The link expires in 24 hours.
+                    </p>
+                    <Link
+                      href="/demo"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-colors"
+                    >
+                      Preview demo while you wait
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-14 h-14 rounded-2xl bg-amber-50 dark:bg-amber-950/50 flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle2 className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                      Request saved.
+                    </h2>
+                    <p className="text-slate-600 dark:text-slate-400 mb-2">
+                      Your beta request for <strong>{form.email}</strong> was saved successfully.
+                    </p>
+                    <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 mb-6">
+                      We could not send the verification email right now. Please contact us at{" "}
+                      <a href="mailto:support@engpulse.io" className="underline font-medium">
+                        support@engpulse.io
+                      </a>{" "}
+                      to activate your access.
+                    </p>
+                    <Link
+                      href="/demo"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-colors"
+                    >
+                      Preview demo
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </>
+                )}
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">

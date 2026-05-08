@@ -52,6 +52,15 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
 
 # ─────────────────────────────────────────────
+# Netlify Functions — TypeScript, compiled by esbuild
+# beta-request, pricing-inquiry, health-check
+# ─────────────────────────────────────────────
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# ─────────────────────────────────────────────
 # Next.js plugin — converts API routes to
 # Netlify Functions and proxy.ts to Edge Functions
 # ─────────────────────────────────────────────

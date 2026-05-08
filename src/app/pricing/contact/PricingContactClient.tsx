@@ -68,7 +68,11 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
 
     try {
       track("pricing_inquiry_submitted", { plan: form.selected_plan });
-      const res = await fetch("/api/pricing/contact", {
+      const base = process.env.NEXT_PUBLIC_NETLIFY_FUNCTIONS_BASE || "";
+      const endpoint = base
+        ? `${base}/pricing-inquiry`
+        : "/api/pricing/contact";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
