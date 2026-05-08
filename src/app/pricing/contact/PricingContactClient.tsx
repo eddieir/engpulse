@@ -39,6 +39,7 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [requestId, setRequestId] = useState<string | null>(null);
 
   const matchedPlan = PLANS.find((p) =>
     p.toLowerCase().startsWith((defaultPlan || "").toLowerCase())
@@ -65,6 +66,7 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
     setLoading(true);
     setError(null);
     setFieldErrors({});
+    setRequestId(null);
 
     try {
       track("pricing_inquiry_submitted", { plan: form.selected_plan });
@@ -78,6 +80,7 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
         body: JSON.stringify(form),
       });
       const data = await res.json();
+      if (data.requestId) setRequestId(data.requestId);
       if (!data.ok) {
         if (data.fields) setFieldErrors(data.fields);
         throw new Error(data.message || "Submission failed. Please try again.");
@@ -194,14 +197,19 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
                 />
 
                 {error && (
-                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
-                    {error}
+                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 space-y-1">
+                    <p>{error}</p>
                     {Object.keys(fieldErrors).length > 0 && (
                       <ul className="mt-2 list-disc list-inside space-y-0.5">
                         {Object.values(fieldErrors).map((msg) => (
                           <li key={msg}>{msg}</li>
                         ))}
                       </ul>
+                    )}
+                    {requestId && (
+                      <p className="mt-2 text-xs text-red-400 dark:text-red-500 font-mono">
+                        Reference: {requestId}
+                      </p>
                     )}
                   </div>
                 )}

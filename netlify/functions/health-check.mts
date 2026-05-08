@@ -1,71 +1,138 @@
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
+import { createLogger, makeRequestId } from "./_shared/logger";
+
+const FN = "health-check";
+const TABLES = [
+  "beta_requests",
+  "email_verification_tokens",
+  "pricing_inquiries",
+  "audit_events",
+] as const;
 
 export default async function handler(request: Request): Promise<Response> {
-  // Require admin debug key
+  const requestId = makeRequestId();
+  const log = createLogger(FN, requestId);
+
+  log.info("health_check_start");
+
+  // Auth gate
   const adminKey = process.env.ADMIN_DEBUG_KEY;
   const providedKey = request.headers.get("x-debug-key");
 
   if (!adminKey || providedKey !== adminKey) {
-    return Response.json({ ok: false, error: "UNAUTHORIZED" }, { status: 401 });
+    log.warn("health_check_unauthorized");
+    return Response.json({ ok: false, error: "UNAUTHORIZED", requestId }, { status: 401 });
   }
 
-  const env = {
-    siteUrl: !!process.env.NEXT_PUBLIC_SITE_URL,
-    supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    supabaseServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    resendApiKey: !!process.env.RESEND_API_KEY,
-    emailFrom: !!process.env.EMAIL_FROM,
-    pricingTeamEmail: !!process.env.PRICING_TEAM_EMAIL,
-    adminDebugKey: !!process.env.ADMIN_DEBUG_KEY,
-  };
+  // Env inventory — booleans only, never values
+  const envVars = [
+    "NEXT_PUBLIC_SITE_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "RESEND_API_KEY",
+    "EMAIL_FROM",
+    "PRICING_TEAM_EMAIL",
+    "ADMIN_DEBUG_KEY",
+    "NEXT_PUBLIC_NETLIFY_FUNCTIONS_BASE",
+  ] as const;
 
-  const missingEnv = Object.entries(env)
-    .filter(([, present]) => !present)
-    .map(([name]) => name);
+  const environment: Record<string, boolean> = {};
+  const missingEnv: string[] = [];
+  for (const key of envVars) {
+    const present = !!process.env[key];
+    environment[key] = present;
+    if (!present) missingEnv.push(key);
+  }
 
   if (missingEnv.length > 0) {
-    console.error("[health-check] Missing env vars:", missingEnv.join(", "));
+    log.warn("env_vars_missing", { missing: missingEnv });
   } else {
-    console.log("[health-check] All env vars present");
+    log.info("env_vars_ok");
   }
 
-  // Ping Supabase
-  let dbConnected = false;
-  let dbError: string | null = null;
-  try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (url && key) {
+  // Supabase connectivity + table checks
+  const supabaseResult: {
+    connected: boolean;
+    tables: Record<string, boolean>;
+    error?: string;
+  } = { connected: false, tables: {} };
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    supabaseResult.error = "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY";
+    log.error("supabase_skipped", { reason: supabaseResult.error });
+  } else {
+    try {
       const supabase = createClient(url, key, { auth: { persistSession: false } });
-      const { error } = await supabase.from("beta_requests").select("id").limit(1);
-      if (error) {
-        dbError = error.message;
-        console.error("[health-check] Supabase ping error:", error.message);
-      } else {
-        dbConnected = true;
-        console.log("[health-check] Supabase ping: ok");
+
+      for (const table of TABLES) {
+        try {
+          const { error } = await supabase.from(table).select("id").limit(1);
+          supabaseResult.tables[table] = !error;
+          if (error) {
+            log.error(`table_check_failed_${table}`, { error: error.message, code: error.code });
+          } else {
+            log.info(`table_check_ok_${table}`);
+          }
+        } catch (e) {
+          supabaseResult.tables[table] = false;
+          log.error(`table_check_exception_${table}`, {
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
       }
-    } else {
-      dbError = "Missing Supabase env vars — skipping DB ping";
-      console.error("[health-check] Skipping DB ping:", dbError);
+
+      supabaseResult.connected = Object.values(supabaseResult.tables).every(Boolean);
+      log.info("supabase_check_complete", { connected: supabaseResult.connected });
+    } catch (e) {
+      supabaseResult.error = e instanceof Error ? e.message : String(e);
+      log.error("supabase_exception", { error: supabaseResult.error });
     }
-  } catch (e) {
-    dbError = e instanceof Error ? e.message : String(e);
-    console.error("[health-check] Supabase exception:", dbError);
   }
 
-  const ok = missingEnv.length === 0 && dbConnected;
+  // Resend configured check (no actual send — just verify key is present)
+  const resendKey = process.env.RESEND_API_KEY;
+  const resendConfigured = !!resendKey;
+  let resendError: string | undefined;
+
+  if (!resendConfigured) {
+    resendError = "RESEND_API_KEY not set";
+    log.warn("resend_not_configured");
+  } else {
+    // Lightweight probe: instantiate client only, no email sent
+    try {
+      new Resend(resendKey);
+      log.info("resend_configured");
+    } catch (e) {
+      resendError = e instanceof Error ? e.message : String(e);
+      log.error("resend_init_failed", { error: resendError });
+    }
+  }
+
+  const allOk =
+    missingEnv.length === 0 && supabaseResult.connected && resendConfigured && !resendError;
+
+  log.info("health_check_complete", { ok: allOk });
 
   return Response.json(
     {
-      ok,
-      env,
+      ok: allOk,
+      requestId,
+      environment,
       missingEnv,
-      database: {
-        connected: dbConnected,
-        ...(dbError ? { error: dbError } : {}),
+      supabase: {
+        connected: supabaseResult.connected,
+        tables: supabaseResult.tables,
+        ...(supabaseResult.error ? { error: supabaseResult.error } : {}),
+      },
+      resend: {
+        configured: resendConfigured,
+        ...(resendError ? { error: resendError } : {}),
       },
     },
-    { status: ok ? 200 : 503 }
+    { status: allOk ? 200 : 503 }
   );
 }
