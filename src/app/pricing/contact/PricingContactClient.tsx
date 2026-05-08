@@ -38,6 +38,7 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const matchedPlan = PLANS.find((p) =>
     p.toLowerCase().startsWith((defaultPlan || "").toLowerCase())
@@ -47,7 +48,7 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
     full_name: "",
     email: "",
     company: "",
-    role: "",
+    role: ROLES[0],
     selected_plan: matchedPlan || PLANS[0],
     team_size: "",
     repo_count: "",
@@ -63,6 +64,7 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setFieldErrors({});
 
     try {
       track("pricing_inquiry_submitted", { plan: form.selected_plan });
@@ -72,7 +74,10 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Submission failed");
+      if (!data.ok) {
+        if (data.fields) setFieldErrors(data.fields);
+        throw new Error(data.message || "Submission failed. Please try again.");
+      }
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -185,9 +190,16 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
                 />
 
                 {error && (
-                  <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
                     {error}
-                  </p>
+                    {Object.keys(fieldErrors).length > 0 && (
+                      <ul className="mt-2 list-disc list-inside space-y-0.5">
+                        {Object.values(fieldErrors).map((msg) => (
+                          <li key={msg}>{msg}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 )}
 
                 <button

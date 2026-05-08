@@ -24,7 +24,13 @@ type FormState = {
 };
 
 type SubmitStatus = "idle" | "loading" | "success" | "error";
-type ErrorCode = "already_active" | "already_pending" | "generic";
+type ErrorCode =
+  | "ALREADY_ACTIVE"
+  | "DUPLICATE_BETA_REQUEST"
+  | "VALIDATION_ERROR"
+  | "SERVICE_UNAVAILABLE"
+  | "SERVER_ERROR"
+  | "generic";
 
 export function BetaPageClient() {
   const { t, language } = useI18n();
@@ -33,6 +39,7 @@ export function BetaPageClient() {
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [errorCode, setErrorCode] = useState<ErrorCode>("generic");
   const [errorMsg, setErrorMsg] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState<FormState>({
     full_name: "",
@@ -65,6 +72,7 @@ export function BetaPageClient() {
     e.preventDefault();
     setStatus("loading");
     setErrorMsg("");
+    setFieldErrors({});
     track("beta_submitted", { plan: form.selected_plan, role: form.role });
 
     try {
@@ -75,9 +83,10 @@ export function BetaPageClient() {
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        setErrorCode((data.code as ErrorCode) || "generic");
-        setErrorMsg(data.error || "Something went wrong. Please try again.");
+      if (!data.ok) {
+        setErrorCode((data.error as ErrorCode) || "generic");
+        setErrorMsg(data.message || "Something went wrong. Please try again.");
+        if (data.fields) setFieldErrors(data.fields);
         setStatus("error");
         return;
       }
@@ -250,15 +259,22 @@ export function BetaPageClient() {
                 {status === "error" && (
                   <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
                     {errorMsg}
-                    {errorCode === "already_pending" && (
+                    {errorCode === "DUPLICATE_BETA_REQUEST" && (
                       <span className="block mt-1">
                         <Link href="/verify-email" className="underline">Check your email</Link> for the verification link.
                       </span>
                     )}
-                    {errorCode === "already_active" && (
+                    {errorCode === "ALREADY_ACTIVE" && (
                       <span className="block mt-1">
                         <Link href="/onboarding/connect-github" className="underline">Continue to connect GitHub →</Link>
                       </span>
+                    )}
+                    {Object.keys(fieldErrors).length > 0 && (
+                      <ul className="mt-2 list-disc list-inside space-y-0.5">
+                        {Object.values(fieldErrors).map((msg) => (
+                          <li key={msg}>{msg}</li>
+                        ))}
+                      </ul>
                     )}
                   </div>
                 )}
