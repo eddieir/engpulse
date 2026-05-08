@@ -1,38 +1,38 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 import { randomBytes, createHash } from "crypto";
+import { createLogger, makeRequestId } from "./_shared/logger";
+import { validateDatabaseEnv, validateEmailEnv } from "./_shared/env";
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+const FN = "beta-request";
 
-function jsonOk(message: string, extra?: Record<string, unknown>): Response {
-  return Response.json({ ok: true, message, ...extra });
+// ── response helpers ─────────────────────────────────────────────────────────
+
+function jsonOk(requestId: string, message: string, extra?: Record<string, unknown>): Response {
+  return Response.json({ ok: true, message, requestId, ...extra });
 }
 
 function jsonFail(
+  requestId: string,
   status: number,
   error: string,
   message: string,
   fields?: Record<string, string>
 ): Response {
   return Response.json(
-    { ok: false, error, message, ...(fields ? { fields } : {}) },
+    { ok: false, error, message, requestId, ...(fields ? { fields } : {}) },
     { status }
   );
 }
 
+// ── internal helpers ─────────────────────────────────────────────────────────
+
 function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url) {
-    console.error("[beta-request] Missing env var: NEXT_PUBLIC_SUPABASE_URL");
-    throw new Error("NEXT_PUBLIC_SUPABASE_URL not set");
-  }
-  if (!key) {
-    console.error("[beta-request] Missing env var: SUPABASE_SERVICE_ROLE_KEY");
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set");
-  }
-  console.log("[beta-request] Supabase env vars: present");
-  return createClient(url, key, { auth: { persistSession: false } });
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
 }
 
 function generateToken(bytes = 32): string {
@@ -43,17 +43,16 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-async function sendVerificationEmail(to: string, name: string, token: string): Promise<void> {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.error("[beta-request] Missing env var: RESEND_API_KEY");
-    throw new Error("RESEND_API_KEY not set");
-  }
+async function sendVerificationEmail(
+  to: string,
+  name: string,
+  token: string
+): Promise<void> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://engplus.netlify.app";
   const from = process.env.EMAIL_FROM || "EngPulse <noreply@engpulse.io>";
   const verifyUrl = `${siteUrl}/verify-email?token=${token}`;
 
-  const resend = new Resend(key);
+  const resend = new Resend(process.env.RESEND_API_KEY!);
   const result = await resend.emails.send({
     from,
     to,
@@ -69,7 +68,7 @@ async function sendVerificationEmail(to: string, name: string, token: string): P
     <div style="padding:40px">
       <h1 style="font-size:22px;font-weight:700;color:#0f172a;margin:0 0 12px">Hi ${name},</h1>
       <p style="color:#475569;line-height:1.6;margin:0 0 24px">
-        You requested 7-day demo access to <strong>EngPulse</strong> — the board-ready engineering reporting tool for CTOs, founders, and engineering leaders.
+        You requested 7-day demo access to <strong>EngPulse</strong> — the board-ready engineering reporting tool.
       </p>
       <p style="color:#475569;line-height:1.6;margin:0 0 32px">
         Click the button below to activate your account. This link expires in <strong>24 hours</strong>.
@@ -79,11 +78,11 @@ async function sendVerificationEmail(to: string, name: string, token: string): P
           Activate demo access →
         </a>
       </div>
-      <p style="color:#94a3b8;font-size:13px;line-height:1.5;margin:0 0 8px">If you didn't request this, you can safely ignore this email.</p>
-      <p style="color:#94a3b8;font-size:13px;line-height:1.5;margin:0">Or copy this link: <a href="${verifyUrl}" style="color:#2563eb">${verifyUrl}</a></p>
+      <p style="color:#94a3b8;font-size:13px;margin:0">If you didn't request this, ignore this email.</p>
+      <p style="color:#94a3b8;font-size:13px;margin:8px 0 0">Or copy this link: <a href="${verifyUrl}" style="color:#2563eb">${verifyUrl}</a></p>
     </div>
     <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;text-align:center">
-      <p style="color:#94a3b8;font-size:12px;margin:0">© 2026 EngPulse · Engineering clarity for non-technical leaders</p>
+      <p style="color:#94a3b8;font-size:12px;margin:0">© 2026 EngPulse</p>
     </div>
   </div>
 </body>
@@ -98,18 +97,28 @@ async function sendVerificationEmail(to: string, name: string, token: string): P
 // ── handler ───────────────────────────────────────────────────────────────────
 
 export default async function handler(request: Request): Promise<Response> {
-  console.log("[beta-request] POST received, method:", request.method);
+  const requestId = makeRequestId();
+  const log = createLogger(FN, requestId);
 
+  // 1. start
+  log.info("beta_request_start", { method: request.method });
+
+  // 2. method check
   if (request.method !== "POST") {
-    return jsonFail(405, "METHOD_NOT_ALLOWED", "Method not allowed.");
+    log.warn("request_method_rejected", { method: request.method });
+    return jsonFail(requestId, 405, "METHOD_NOT_ALLOWED", "Method not allowed.");
   }
+  log.info("request_method_checked");
 
-  // Parse body
+  // 3–5. body parse
+  log.info("body_parse_start");
   let body: Record<string, unknown>;
   try {
     body = await request.json();
+    log.info("body_parse_success", { keys: Object.keys(body) });
   } catch {
-    return jsonFail(400, "BAD_REQUEST", "Invalid JSON body.");
+    log.error("body_parse_failed");
+    return jsonFail(requestId, 400, "BAD_REQUEST", "Invalid JSON body.");
   }
 
   const {
@@ -125,7 +134,8 @@ export default async function handler(request: Request): Promise<Response> {
     selected_plan,
   } = body;
 
-  // Field-level validation
+  // 6–8. validation
+  log.info("validation_start");
   const missingFields: Record<string, string> = {};
   if (!full_name) missingFields.full_name = "Full name is required.";
   if (!email) missingFields.email = "Work email is required.";
@@ -134,57 +144,102 @@ export default async function handler(request: Request): Promise<Response> {
   if (!team_size) missingFields.team_size = "Engineering team size is required.";
 
   if (Object.keys(missingFields).length > 0) {
-    console.log("[beta-request] Validation failed:", Object.keys(missingFields));
-    return jsonFail(400, "VALIDATION_ERROR", "Please complete all required fields.", missingFields);
+    log.warn("validation_failed", { missingFields: Object.keys(missingFields) });
+    return jsonFail(
+      requestId,
+      400,
+      "VALIDATION_ERROR",
+      "Please complete all required fields.",
+      missingFields
+    );
   }
 
   const emailStr = String(email).trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr)) {
-    return jsonFail(400, "VALIDATION_ERROR", "Please enter a valid email address.", {
+    log.warn("validation_failed", { reason: "invalid_email" });
+    return jsonFail(requestId, 400, "VALIDATION_ERROR", "Please enter a valid email address.", {
       email: "Invalid email address.",
     });
   }
+  log.info("validation_success");
 
-  console.log("[beta-request] Validation passed for:", emailStr);
+  // 9–11. env check
+  log.info("env_check_start");
+  const dbEnv = validateDatabaseEnv();
+  const emailEnv = validateEmailEnv();
 
-  // Init Supabase
+  if (!dbEnv.ok) {
+    log.error("database_env_missing", { missing: dbEnv.missing });
+    return jsonFail(
+      requestId,
+      503,
+      "CONFIG_ERROR",
+      "Beta requests are temporarily unavailable. Please contact us."
+    );
+  }
+  if (!emailEnv.ok) {
+    log.warn("email_env_missing_continue_without_email", { missing: emailEnv.missing });
+  }
+  log.info("env_check_success", { db: true, email: emailEnv.ok });
+
+  // 12–13. Supabase client
+  log.info("supabase_client_create_start");
   let supabase: ReturnType<typeof getSupabase>;
   try {
     supabase = getSupabase();
-  } catch {
+    log.info("supabase_client_create_success");
+  } catch (e) {
+    log.error("supabase_client_create_failed", {
+      error: e instanceof Error ? e.message : String(e),
+    });
     return jsonFail(
+      requestId,
       503,
-      "SERVICE_UNAVAILABLE",
-      "We could not process your request right now. Please try again later or contact us."
+      "CONFIG_ERROR",
+      "Beta requests are temporarily unavailable. Please contact us."
     );
   }
 
-  // Check for duplicate
-  console.log("[beta-request] Checking for duplicate email");
-  const { data: existing } = await supabase
+  // 14–16. duplicate check
+  log.info("duplicate_check_start");
+  const { data: existing, error: dupError } = await supabase
     .from("beta_requests")
     .select("id, status")
     .eq("email", emailStr)
     .in("status", ["pending_email_verification", "email_verified", "active"])
     .maybeSingle();
 
+  if (dupError) {
+    log.error("duplicate_check_failed", { error: dupError.message, code: dupError.code });
+    return jsonFail(
+      requestId,
+      500,
+      "DATABASE_ERROR",
+      "We could not verify your email. Please try again."
+    );
+  }
+  log.info("duplicate_check_success", { found: !!existing });
+
   if (existing) {
+    log.info("duplicate_found", { status: existing.status });
     if (existing.status === "active") {
       return jsonFail(
+        requestId,
         409,
         "ALREADY_ACTIVE",
         "This email already has active beta access. Check your inbox or go to onboarding."
       );
     }
     return jsonFail(
+      requestId,
       409,
       "DUPLICATE_BETA_REQUEST",
       "We already sent a verification email to this address. Check your inbox (and spam folder) or wait 24 hours."
     );
   }
 
-  // Insert beta request
-  console.log("[beta-request] Inserting beta_request");
+  // 17–19. beta_requests insert
+  log.info("beta_insert_start");
   const { data: betaRequest, error: insertError } = await supabase
     .from("beta_requests")
     .insert({
@@ -208,67 +263,101 @@ export default async function handler(request: Request): Promise<Response> {
     .single();
 
   if (insertError || !betaRequest) {
-    console.error("[beta-request] beta_requests insert error:", insertError?.message);
-    return jsonFail(500, "DATABASE_ERROR", "We could not save your request. Please try again.");
+    log.error("beta_insert_failed", {
+      error: insertError?.message,
+      code: insertError?.code,
+      details: insertError?.details,
+    });
+    return jsonFail(
+      requestId,
+      500,
+      "DATABASE_ERROR",
+      "We could not save your request. Please try again."
+    );
   }
+  log.info("beta_insert_success", { id: betaRequest.id });
 
-  console.log("[beta-request] beta_request inserted, id:", betaRequest.id);
-
-  // Generate and store verification token
+  // 20–22. token generate + insert
+  log.info("token_generate_start");
   const rawToken = generateToken();
   const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  log.info("token_generate_success");
 
-  console.log("[beta-request] Inserting verification token");
-  const { error: tokenError } = await supabase
-    .from("email_verification_tokens")
-    .insert({
-      beta_request_id: betaRequest.id,
-      email: emailStr,
-      token_hash: tokenHash,
-      expires_at: expiresAt.toISOString(),
-    });
+  log.info("token_insert_start");
+  const { error: tokenError } = await supabase.from("email_verification_tokens").insert({
+    beta_request_id: betaRequest.id,
+    email: emailStr,
+    token_hash: tokenHash,
+    expires_at: expiresAt.toISOString(),
+  });
 
   if (tokenError) {
-    console.error("[beta-request] token insert error:", tokenError.message);
+    log.error("token_insert_failed", { error: tokenError.message, code: tokenError.code });
     return jsonFail(
+      requestId,
       500,
       "DATABASE_ERROR",
       "We could not generate your verification link. Please try again."
     );
   }
+  log.info("token_insert_success");
 
-  // Send verification email — non-blocking on failure
-  console.log("[beta-request] Sending verification email");
-  let emailSent = true;
-  try {
-    await sendVerificationEmail(emailStr, String(full_name).trim(), rawToken);
-    console.log("[beta-request] Email sent successfully");
-  } catch (emailErr) {
-    emailSent = false;
-    console.error(
-      "[beta-request] Email send failed:",
-      emailErr instanceof Error ? emailErr.message : emailErr
+  // 23–25. email send (non-blocking — DB is already saved)
+  let emailSent = false;
+  let emailWarning: string | undefined;
+
+  if (!emailEnv.ok) {
+    // Env not configured — skip send entirely, return known warning
+    log.warn("email_send_skipped_not_configured", { missing: emailEnv.missing });
+    emailWarning = "EMAIL_NOT_CONFIGURED";
+  } else {
+    log.info("email_send_start");
+    try {
+      await sendVerificationEmail(emailStr, String(full_name).trim(), rawToken);
+      emailSent = true;
+      log.info("email_send_success");
+    } catch (emailErr) {
+      emailWarning = "EMAIL_FAILED";
+      log.error("email_send_failed", {
+        error: emailErr instanceof Error ? emailErr.message : String(emailErr),
+      });
+    }
+  }
+
+  // 26–28. audit event (fire-and-forget)
+  log.info("audit_event_start");
+  void (async () => {
+    const { error } = await supabase.from("audit_events").insert({
+      event_type: "beta_form_submitted",
+      entity_type: "beta_request",
+      entity_id: betaRequest.id,
+      email: emailStr,
+      metadata: { plan: selected_plan, role, team_size, email_sent: emailSent, requestId },
+    });
+    if (error) log.warn("audit_event_failed", { error: error.message });
+    else log.info("audit_event_success");
+  })();
+
+  // 29–30. final response
+  if (emailWarning === "EMAIL_NOT_CONFIGURED") {
+    log.warn("beta_request_partial_success", { email_sent: false, warning: emailWarning });
+    return jsonOk(
+      requestId,
+      "Your request was saved, but the verification email could not be sent. Please contact support.",
+      { email_sent: false, warning: "EMAIL_NOT_CONFIGURED" }
     );
   }
 
-  // Audit event (fire-and-forget, don't block success response)
-  supabase.from("audit_events").insert({
-    event_type: "beta_form_submitted",
-    entity_type: "beta_request",
-    entity_id: betaRequest.id,
-    email: emailStr,
-    metadata: { plan: selected_plan, role, team_size, email_sent: emailSent },
-  });
-
-  console.log("[beta-request] Done for:", emailStr, "| email_sent:", emailSent);
-
-  if (!emailSent) {
+  if (emailWarning === "EMAIL_FAILED") {
+    log.warn("beta_request_partial_success", { email_sent: false, warning: emailWarning });
     return jsonOk(
+      requestId,
       "Your request was saved, but we could not send the verification email. Please contact support.",
       { email_sent: false, warning: "EMAIL_FAILED" }
     );
   }
 
-  return jsonOk("Check your email to activate your 7-day EngPulse beta access.");
+  log.info("beta_request_success");
+  return jsonOk(requestId, "Check your email to activate your 7-day EngPulse beta access.");
 }

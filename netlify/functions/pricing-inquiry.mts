@@ -1,49 +1,48 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import { createLogger, makeRequestId } from "./_shared/logger";
+import { validateDatabaseEnv, validatePricingEmailEnv } from "./_shared/env";
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+const FN = "pricing-inquiry";
 
-function jsonOk(message: string): Response {
-  return Response.json({ ok: true, message });
+// ── response helpers ─────────────────────────────────────────────────────────
+
+function jsonOk(requestId: string, message: string, extra?: Record<string, unknown>): Response {
+  return Response.json({ ok: true, message, requestId, ...extra });
 }
 
 function jsonFail(
+  requestId: string,
   status: number,
   error: string,
   message: string,
   fields?: Record<string, string>
 ): Response {
   return Response.json(
-    { ok: false, error, message, ...(fields ? { fields } : {}) },
+    { ok: false, error, message, requestId, ...(fields ? { fields } : {}) },
     { status }
   );
 }
 
+// ── internal helpers ─────────────────────────────────────────────────────────
+
 function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url) {
-    console.error("[pricing-inquiry] Missing env var: NEXT_PUBLIC_SUPABASE_URL");
-    throw new Error("NEXT_PUBLIC_SUPABASE_URL not set");
-  }
-  if (!key) {
-    console.error("[pricing-inquiry] Missing env var: SUPABASE_SERVICE_ROLE_KEY");
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY not set");
-  }
-  console.log("[pricing-inquiry] Supabase env vars: present");
-  return createClient(url, key, { auth: { persistSession: false } });
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
 }
 
-async function sendConfirmationEmail(to: string, name: string, plan: string): Promise<void> {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    console.error("[pricing-inquiry] Missing env var: RESEND_API_KEY");
-    throw new Error("RESEND_API_KEY not set");
-  }
+async function sendConfirmationEmail(
+  to: string,
+  name: string,
+  plan: string
+): Promise<void> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://engplus.netlify.app";
   const from = process.env.EMAIL_FROM || "EngPulse <noreply@engpulse.io>";
 
-  const resend = new Resend(key);
+  const resend = new Resend(process.env.RESEND_API_KEY!);
   const result = await resend.emails.send({
     from,
     to,
@@ -58,31 +57,21 @@ async function sendConfirmationEmail(to: string, name: string, plan: string): Pr
     </div>
     <div style="padding:40px">
       <h1 style="font-size:22px;font-weight:700;color:#0f172a;margin:0 0 12px">Thanks, ${name}!</h1>
-      <p style="color:#475569;line-height:1.6;margin:0 0 16px">
-        We've received your inquiry for the <strong>${plan}</strong> plan.
-      </p>
-      <p style="color:#475569;line-height:1.6;margin:0 0 28px">
-        A member of our pricing team will contact you shortly to discuss your team's needs.
-      </p>
-      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin:0 0 24px">
-        <p style="color:#64748b;font-size:13px;margin:0 0 4px;font-weight:600">Selected plan</p>
-        <p style="color:#0f172a;font-size:16px;font-weight:700;margin:0">${plan}</p>
-      </div>
-      <p style="color:#475569;font-size:14px;line-height:1.6;margin:0">
-        While you wait, you're welcome to <a href="${siteUrl}/demo" style="color:#2563eb">explore the demo</a> or review our <a href="${siteUrl}/security" style="color:#2563eb">security page</a>.
+      <p style="color:#475569;line-height:1.6;margin:0 0 16px">We've received your inquiry for the <strong>${plan}</strong> plan.</p>
+      <p style="color:#475569;line-height:1.6;margin:0 0 28px">Our pricing team will contact you shortly.</p>
+      <p style="color:#475569;font-size:14px;margin:0">
+        In the meantime, <a href="${siteUrl}/demo" style="color:#2563eb">explore the demo</a>.
       </p>
     </div>
     <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;text-align:center">
-      <p style="color:#94a3b8;font-size:12px;margin:0">© 2026 EngPulse · Engineering clarity for non-technical leaders</p>
+      <p style="color:#94a3b8;font-size:12px;margin:0">© 2026 EngPulse</p>
     </div>
   </div>
 </body>
 </html>`,
   });
 
-  if (result.error) {
-    throw new Error(`Resend error: ${result.error.message}`);
-  }
+  if (result.error) throw new Error(`Resend error: ${result.error.message}`);
 }
 
 async function sendInternalNotification(inquiry: {
@@ -96,13 +85,10 @@ async function sendInternalNotification(inquiry: {
   current_reporting_tool?: string;
   message?: string;
 }): Promise<void> {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) throw new Error("RESEND_API_KEY not set");
   const from = process.env.EMAIL_FROM || "EngPulse <noreply@engpulse.io>";
-  const to =
-    process.env.PRICING_TEAM_EMAIL || process.env.EMAIL_FROM || "noreply@engpulse.io";
+  const to = process.env.PRICING_TEAM_EMAIL || process.env.EMAIL_FROM || "noreply@engpulse.io";
 
-  const resend = new Resend(key);
+  const resend = new Resend(process.env.RESEND_API_KEY!);
   await resend.emails.send({
     from,
     to,
@@ -122,7 +108,6 @@ async function sendInternalNotification(inquiry: {
     <tr><td style="padding:8px 0;font-weight:600">Current tool</td><td>${inquiry.current_reporting_tool || "—"}</td></tr>
     <tr><td style="padding:8px 0;font-weight:600;vertical-align:top">Message</td><td>${inquiry.message || "—"}</td></tr>
   </table>
-  <p style="margin-top:24px;color:#64748b;font-size:13px">Log in to Supabase to view this record in the pricing_inquiries table.</p>
 </body>
 </html>`,
   });
@@ -131,18 +116,28 @@ async function sendInternalNotification(inquiry: {
 // ── handler ───────────────────────────────────────────────────────────────────
 
 export default async function handler(request: Request): Promise<Response> {
-  console.log("[pricing-inquiry] POST received, method:", request.method);
+  const requestId = makeRequestId();
+  const log = createLogger(FN, requestId);
 
+  // 1. start
+  log.info("pricing_request_start", { method: request.method });
+
+  // 2. method check
   if (request.method !== "POST") {
-    return jsonFail(405, "METHOD_NOT_ALLOWED", "Method not allowed.");
+    log.warn("request_method_rejected", { method: request.method });
+    return jsonFail(requestId, 405, "METHOD_NOT_ALLOWED", "Method not allowed.");
   }
+  log.info("request_method_checked");
 
-  // Parse body
+  // 3–4. body parse
+  log.info("body_parse_start");
   let body: Record<string, unknown>;
   try {
     body = await request.json();
+    log.info("body_parse_success", { keys: Object.keys(body) });
   } catch {
-    return jsonFail(400, "BAD_REQUEST", "Invalid JSON body.");
+    log.error("body_parse_failed");
+    return jsonFail(requestId, 400, "BAD_REQUEST", "Invalid JSON body.");
   }
 
   const {
@@ -158,7 +153,8 @@ export default async function handler(request: Request): Promise<Response> {
     preferred_language,
   } = body;
 
-  // Field-level validation
+  // 5–7. validation
+  log.info("validation_start");
   const missingFields: Record<string, string> = {};
   if (!full_name) missingFields.full_name = "Full name is required.";
   if (!email) missingFields.email = "Work email is required.";
@@ -167,33 +163,64 @@ export default async function handler(request: Request): Promise<Response> {
   if (!selected_plan) missingFields.selected_plan = "Please select a plan.";
 
   if (Object.keys(missingFields).length > 0) {
-    console.log("[pricing-inquiry] Validation failed:", Object.keys(missingFields));
-    return jsonFail(400, "VALIDATION_ERROR", "Please complete all required fields.", missingFields);
+    log.warn("validation_failed", { missingFields: Object.keys(missingFields) });
+    return jsonFail(
+      requestId,
+      400,
+      "VALIDATION_ERROR",
+      "Please complete all required fields.",
+      missingFields
+    );
   }
 
   const emailStr = String(email).trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr)) {
-    return jsonFail(400, "VALIDATION_ERROR", "Please enter a valid email address.", {
+    log.warn("validation_failed", { reason: "invalid_email" });
+    return jsonFail(requestId, 400, "VALIDATION_ERROR", "Please enter a valid email address.", {
       email: "Invalid email address.",
     });
   }
+  log.info("validation_success");
 
-  console.log("[pricing-inquiry] Validation passed for:", emailStr);
+  // 8–10. env check
+  log.info("env_check_start");
+  const dbEnv = validateDatabaseEnv();
+  const emailEnv = validatePricingEmailEnv();
 
-  // Init Supabase
+  if (!dbEnv.ok) {
+    log.error("database_env_missing", { missing: dbEnv.missing });
+    return jsonFail(
+      requestId,
+      503,
+      "CONFIG_ERROR",
+      "Pricing requests are temporarily unavailable. Please contact us."
+    );
+  }
+  if (!emailEnv.ok) {
+    log.warn("email_env_missing_continue_without_email", { missing: emailEnv.missing });
+  }
+  log.info("env_check_success", { db: true, email: emailEnv.ok });
+
+  // 11–12. Supabase client
+  log.info("supabase_client_create_start");
   let supabase: ReturnType<typeof getSupabase>;
   try {
     supabase = getSupabase();
-  } catch {
+    log.info("supabase_client_create_success");
+  } catch (e) {
+    log.error("supabase_client_create_failed", {
+      error: e instanceof Error ? e.message : String(e),
+    });
     return jsonFail(
+      requestId,
       503,
-      "SERVICE_UNAVAILABLE",
-      "We could not process your request right now. Please try again later or contact us."
+      "CONFIG_ERROR",
+      "Pricing requests are temporarily unavailable. Please contact us."
     );
   }
 
-  // Insert pricing inquiry
-  console.log("[pricing-inquiry] Inserting pricing_inquiry");
+  // 13–15. pricing_inquiries insert
+  log.info("pricing_insert_start");
   const { data: inquiry, error: insertError } = await supabase
     .from("pricing_inquiries")
     .insert({
@@ -213,57 +240,89 @@ export default async function handler(request: Request): Promise<Response> {
     .single();
 
   if (insertError || !inquiry) {
-    console.error("[pricing-inquiry] pricing_inquiries insert error:", insertError?.message);
-    return jsonFail(500, "DATABASE_ERROR", "We could not save your request. Please try again.");
-  }
-
-  console.log("[pricing-inquiry] pricing_inquiry inserted, id:", inquiry.id);
-
-  // Send confirmation email to user — non-blocking
-  console.log("[pricing-inquiry] Sending confirmation email");
-  try {
-    await sendConfirmationEmail(emailStr, String(full_name).trim(), String(selected_plan));
-    console.log("[pricing-inquiry] Confirmation email sent");
-  } catch (e) {
-    console.error(
-      "[pricing-inquiry] Confirmation email failed:",
-      e instanceof Error ? e.message : e
-    );
-  }
-
-  // Send internal notification — non-blocking
-  console.log("[pricing-inquiry] Sending internal notification");
-  try {
-    await sendInternalNotification({
-      full_name: String(full_name).trim(),
-      email: emailStr,
-      company: String(company).trim(),
-      role: String(role),
-      selected_plan: String(selected_plan),
-      team_size: team_size ? String(team_size) : undefined,
-      repo_count: repo_count ? String(repo_count) : undefined,
-      current_reporting_tool: current_reporting_tool ? String(current_reporting_tool) : undefined,
-      message: message ? String(message) : undefined,
+    log.error("pricing_insert_failed", {
+      error: insertError?.message,
+      code: insertError?.code,
+      details: insertError?.details,
     });
-    console.log("[pricing-inquiry] Internal notification sent");
-  } catch (e) {
-    console.error(
-      "[pricing-inquiry] Internal notification failed:",
-      e instanceof Error ? e.message : e
+    return jsonFail(
+      requestId,
+      500,
+      "DATABASE_ERROR",
+      "We could not save your request. Please try again."
+    );
+  }
+  log.info("pricing_insert_success", { id: inquiry.id });
+
+  // 16–21. emails (non-blocking — DB is already saved)
+  let emailsAttempted = false;
+  let emailWarning: string | undefined;
+
+  if (!emailEnv.ok) {
+    log.warn("email_send_skipped_not_configured", { missing: emailEnv.missing });
+    emailWarning = "EMAIL_NOT_CONFIGURED";
+  } else {
+    emailsAttempted = true;
+
+    log.info("user_email_send_start");
+    try {
+      await sendConfirmationEmail(emailStr, String(full_name).trim(), String(selected_plan));
+      log.info("user_email_send_success");
+    } catch (e) {
+      log.error("user_email_send_failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+
+    log.info("internal_email_send_start");
+    try {
+      await sendInternalNotification({
+        full_name: String(full_name).trim(),
+        email: emailStr,
+        company: String(company).trim(),
+        role: String(role),
+        selected_plan: String(selected_plan),
+        team_size: team_size ? String(team_size) : undefined,
+        repo_count: repo_count ? String(repo_count) : undefined,
+        current_reporting_tool: current_reporting_tool
+          ? String(current_reporting_tool)
+          : undefined,
+        message: message ? String(message) : undefined,
+      });
+      log.info("internal_email_send_success");
+    } catch (e) {
+      log.error("internal_email_send_failed", {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  // 22–24. audit event (fire-and-forget)
+  log.info("audit_event_start");
+  void (async () => {
+    const { error } = await supabase.from("audit_events").insert({
+      event_type: "pricing_inquiry_submitted",
+      entity_type: "pricing_inquiry",
+      entity_id: inquiry.id,
+      email: emailStr,
+      metadata: { plan: selected_plan, emails_attempted: emailsAttempted, requestId },
+    });
+    if (error) log.warn("audit_event_failed", { error: error.message });
+    else log.info("audit_event_success");
+  })();
+
+  if (emailWarning === "EMAIL_NOT_CONFIGURED") {
+    log.warn("pricing_request_partial_success", { warning: emailWarning });
+    return jsonOk(
+      requestId,
+      "Your pricing request was saved. Our team will contact you soon.",
+      { warning: "EMAIL_NOT_CONFIGURED" }
     );
   }
 
-  // Audit event — fire-and-forget
-  supabase.from("audit_events").insert({
-    event_type: "pricing_inquiry_submitted",
-    entity_type: "pricing_inquiry",
-    entity_id: inquiry.id,
-    email: emailStr,
-    metadata: { plan: selected_plan },
-  });
-
-  console.log("[pricing-inquiry] Done for:", emailStr);
+  log.info("pricing_request_success");
   return jsonOk(
+    requestId,
     "Your pricing request has been received. Our team will contact you within 24 hours."
   );
 }

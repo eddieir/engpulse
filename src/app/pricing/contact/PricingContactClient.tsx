@@ -39,6 +39,8 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [emailWarning, setEmailWarning] = useState<string | null>(null);
 
   const matchedPlan = PLANS.find((p) =>
     p.toLowerCase().startsWith((defaultPlan || "").toLowerCase())
@@ -65,6 +67,8 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
     setLoading(true);
     setError(null);
     setFieldErrors({});
+    setRequestId(null);
+    setEmailWarning(null);
 
     try {
       track("pricing_inquiry_submitted", { plan: form.selected_plan });
@@ -78,10 +82,12 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
         body: JSON.stringify(form),
       });
       const data = await res.json();
+      if (data.requestId) setRequestId(data.requestId);
       if (!data.ok) {
         if (data.fields) setFieldErrors(data.fields);
         throw new Error(data.message || "Submission failed. Please try again.");
       }
+      if (data.warning) setEmailWarning(data.warning as string);
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -117,14 +123,23 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
           >
             {submitted ? (
               <div className="text-center py-8">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${emailWarning === "EMAIL_NOT_CONFIGURED" ? "bg-amber-50 dark:bg-amber-950/50" : "bg-emerald-50 dark:bg-emerald-950/50"}`}>
+                  <CheckCircle2 className={`w-7 h-7 ${emailWarning === "EMAIL_NOT_CONFIGURED" ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`} />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Request received!</h2>
-                <p className="text-slate-600 dark:text-slate-400 mb-6">
-                  Our pricing team will contact you within 24 hours to discuss the{" "}
-                  <strong>{form.selected_plan}</strong> plan.
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                  {emailWarning === "EMAIL_NOT_CONFIGURED" ? "Request saved." : "Request received!"}
+                </h2>
+                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                  {emailWarning === "EMAIL_NOT_CONFIGURED"
+                    ? <>Your pricing inquiry for <strong>{form.selected_plan}</strong> was saved. Our team will contact you soon.</>
+                    : <>Our pricing team will contact you within 24 hours to discuss the <strong>{form.selected_plan}</strong> plan.</>
+                  }
                 </p>
+                {emailWarning === "EMAIL_NOT_CONFIGURED" && requestId && (
+                  <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 mb-4 font-mono">
+                    Reference: {requestId}
+                  </p>
+                )}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link
                     href="/demo"
@@ -194,14 +209,19 @@ export function PricingContactClient({ defaultPlan }: { defaultPlan?: string }) 
                 />
 
                 {error && (
-                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
-                    {error}
+                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3 space-y-1">
+                    <p>{error}</p>
                     {Object.keys(fieldErrors).length > 0 && (
                       <ul className="mt-2 list-disc list-inside space-y-0.5">
                         {Object.values(fieldErrors).map((msg) => (
                           <li key={msg}>{msg}</li>
                         ))}
                       </ul>
+                    )}
+                    {requestId && (
+                      <p className="mt-2 text-xs text-red-400 dark:text-red-500 font-mono">
+                        Reference: {requestId}
+                      </p>
                     )}
                   </div>
                 )}
