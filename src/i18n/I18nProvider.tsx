@@ -15,12 +15,14 @@ const dictionaries: Record<Locale, Dictionary> = { en, it, es, zh };
 
 interface I18nContextValue {
   locale: Locale;
+  language: Locale;
   setLocale: (locale: Locale) => void;
   t: Dictionary;
 }
 
 const I18nContext = createContext<I18nContextValue>({
   locale: "en",
+  language: "en",
   setLocale: () => {},
   t: en,
 });
@@ -47,7 +49,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t: dictionaries[locale] }}>
+    <I18nContext.Provider value={{ locale, language: locale, setLocale, t: dictionaries[locale] }}>
       {children}
     </I18nContext.Provider>
   );

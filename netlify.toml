@@ -1,2 +1,60 @@
+# ─────────────────────────────────────────────
+# Build configuration
+# @netlify/plugin-nextjs v5 handles all Next.js
+# serverless functions and edge functions automatically.
+# ─────────────────────────────────────────────
+
 [build]
   command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Prevent npm from treating warnings as errors in CI
+  CI = "false"
+  # Speed up installs
+  NPM_FLAGS = "--prefer-offline"
+
+# ─────────────────────────────────────────────
+# Cache: immutable Next.js static assets
+# (hashed filenames — safe to cache forever)
+# ─────────────────────────────────────────────
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/favicon.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# ─────────────────────────────────────────────
+# Security headers (complement next.config.ts)
+# ─────────────────────────────────────────────
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# ─────────────────────────────────────────────
+# Next.js plugin — converts API routes to
+# Netlify Functions and proxy.ts to Edge Functions
+# ─────────────────────────────────────────────
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

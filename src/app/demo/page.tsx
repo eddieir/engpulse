@@ -1,4 +1,20 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://engplus.netlify.app";
+
+export const metadata: Metadata = {
+  title: "EngPulse Demo — Weekly Engineering Leadership Dashboard",
+  description:
+    "Explore a live demo of EngPulse — the board-ready engineering dashboard for CTOs, founders, and engineering leaders. See health score, blockers, and CEO summary.",
+  alternates: { canonical: `${SITE_URL}/demo` },
+  openGraph: {
+    title: "EngPulse Demo — Weekly Engineering Leadership Dashboard",
+    description:
+      "Live demo of the EngPulse engineering intelligence dashboard. Health score, blockers, board-ready answers, and weekly leadership report.",
+    url: `${SITE_URL}/demo`,
+  },
+};
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
