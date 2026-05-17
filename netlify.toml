@@ -18,9 +18,9 @@
   NEXT_PUBLIC_SUPABASE_URL = "https://bwwmdrzsedufwrbzasky.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3d21kcnpzZWR1ZndyYnphc2t5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMzMwMTUsImV4cCI6MjA5MzgwOTAxNX0.PObPLw4g-jC43864lxc4tRUtXBnZwOfKq0YlvU76dCw"
   SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3d21kcnpzZWR1ZndyYnphc2t5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODIzMzAxNSwiZXhwIjoyMDkzODA5MDE1fQ.c_UpnhvC_4QaYc7I47fP5gQ4G8FXRyfW5ZK9HAuvZzc"
-  # Email (Resend) — sender uses resend.dev until engpulse.io is verified in Resend
-  RESEND_API_KEY = "re_Goq39Lq4_NtzwLEuc51cJx49duioQZAtX"
-  EMAIL_FROM = "EngPulse <onboarding@resend.dev>"
+  # Email (Gmail SMTP via Nodemailer)
+  GMAIL_USER = "peyman.iravani@gmail.com"
+  GMAIL_APP_PASSWORD = ""
 
 # ─────────────────────────────────────────────
 # Cache: immutable Next.js static assets

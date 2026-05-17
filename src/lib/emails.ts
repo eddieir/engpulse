@@ -1,14 +1,23 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const DEFAULT_RESEND_KEY = "re_Goq39Lq4_NtzwLEuc51cJx49duioQZAtX";
-const DEFAULT_FROM = "EngPulse <onboarding@resend.dev>";
+const GMAIL_USER = process.env.GMAIL_USER || "peyman.iravani@gmail.com";
+const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD || "";
 
-function getResend() {
-  const key = process.env.RESEND_API_KEY || DEFAULT_RESEND_KEY;
-  return new Resend(key);
+function getTransport() {
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+  });
 }
 
-const FROM = process.env.EMAIL_FROM || DEFAULT_FROM;
+async function sendMail(options: { to: string; subject: string; html: string }) {
+  const transport = getTransport();
+  await transport.sendMail({
+    from: `EngPulse <${GMAIL_USER}>`,
+    ...options,
+  });
+}
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://engplus.netlify.app";
 
 export async function sendVerificationEmail({
@@ -22,8 +31,7 @@ export async function sendVerificationEmail({
 }) {
   const verifyUrl = `${SITE_URL}/verify-email?token=${token}`;
 
-  return getResend().emails.send({
-    from: FROM,
+  return sendMail({
     to,
     subject: "Activate your EngPulse 7-day demo access",
     html: `
@@ -86,8 +94,7 @@ export async function sendAccessActivatedEmail({
   });
   const connectUrl = `${SITE_URL}/onboarding/connect-github`;
 
-  return getResend().emails.send({
-    from: FROM,
+  return sendMail({
     to,
     subject: "Your EngPulse demo access is active for 7 days",
     html: `
@@ -148,8 +155,7 @@ export async function sendPricingConfirmationEmail({
   name: string;
   plan: string;
 }) {
-  return getResend().emails.send({
-    from: FROM,
+  return sendMail({
     to,
     subject: "We received your EngPulse pricing request",
     html: `
@@ -201,10 +207,9 @@ export async function sendPricingInternalNotification({
     message?: string;
   };
 }) {
-  const internalTo = process.env.PRICING_TEAM_EMAIL || process.env.EMAIL_FROM || FROM;
+  const internalTo = process.env.PRICING_TEAM_EMAIL || GMAIL_USER;
 
-  return getResend().emails.send({
-    from: FROM,
+  return sendMail({
     to: internalTo,
     subject: `New EngPulse pricing inquiry — ${inquiry.selected_plan}`,
     html: `
