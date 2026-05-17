@@ -1,12 +1,14 @@
 import { Resend } from "resend";
 
+const DEFAULT_RESEND_KEY = "re_Goq39Lq4_NtzwLEuc51cJx49duioQZAtX";
+const DEFAULT_FROM = "EngPulse <onboarding@resend.dev>";
+
 function getResend() {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) throw new Error("RESEND_API_KEY is not set");
+  const key = process.env.RESEND_API_KEY || DEFAULT_RESEND_KEY;
   return new Resend(key);
 }
 
-const FROM = process.env.EMAIL_FROM || "EngPulse <noreply@engpulse.io>";
+const FROM = process.env.EMAIL_FROM || DEFAULT_FROM;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://engplus.netlify.app";
 
 export async function sendVerificationEmail({
