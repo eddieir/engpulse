@@ -95,27 +95,9 @@ export async function POST(request: NextRequest) {
   }
   log("info", requestId, "validation_success");
 
-  log("info", requestId, "env_check_start");
-  const missingEnv: string[] = [];
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missingEnv.push("NEXT_PUBLIC_SUPABASE_URL");
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missingEnv.push("SUPABASE_SERVICE_ROLE_KEY");
-  if (missingEnv.length > 0) {
-    log("error", requestId, "env_check_failed", { missing: missingEnv });
-    return fail(requestId, 503, "CONFIG_ERROR", "Beta requests are temporarily unavailable. Please contact us.");
-  }
-  log("info", requestId, "env_check_success");
-
   log("info", requestId, "supabase_client_create_start");
-  let supabase: ReturnType<typeof createServerClient>;
-  try {
-    supabase = createServerClient();
-    log("info", requestId, "supabase_client_create_success");
-  } catch (e) {
-    log("error", requestId, "supabase_client_create_failed", {
-      error: e instanceof Error ? e.message : String(e),
-    });
-    return fail(requestId, 503, "CONFIG_ERROR", "Beta requests are temporarily unavailable. Please contact us.");
-  }
+  const supabase = createServerClient();
+  log("info", requestId, "supabase_client_create_success");
 
   log("info", requestId, "duplicate_check_start");
   const { data: existing, error: dupError } = await supabase
