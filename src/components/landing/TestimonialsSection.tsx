@@ -44,6 +44,16 @@ const testimonials = [
     initials: "CD",
     color: "bg-amber-600",
   },
+  {
+    quote:
+      "I manage QA for three product squads. EngPulse's release readiness gates give me one clear answer every sprint: are we actually ready to ship? No spreadsheets, no Slack pings — just a go or hold signal I can stand behind.",
+    name: "Priya Nair",
+    role: "Engineering Manager, QA",
+    company: "Fenix Labs",
+    companySize: "Series B · 55 engineers",
+    initials: "PN",
+    color: "bg-rose-600",
+  },
 ];
 
 export function TestimonialsSection() {

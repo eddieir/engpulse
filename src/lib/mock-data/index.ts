@@ -40,18 +40,8 @@ export const mockWorkspace: Workspace = {
     { id: "i4", name: "Linear", provider: "linear", status: "coming_soon" },
     { id: "i5", name: "Notion", provider: "notion", status: "coming_soon" },
     { id: "i6", name: "GitLab", provider: "gitlab", status: "coming_soon" },
-    {
-      id: "i7",
-      name: "Bitbucket",
-      provider: "bitbucket",
-      status: "coming_soon",
-    },
-    {
-      id: "i8",
-      name: "Azure DevOps",
-      provider: "azure_devops",
-      status: "coming_soon",
-    },
+    { id: "i7", name: "Bitbucket", provider: "bitbucket", status: "coming_soon" },
+    { id: "i8", name: "Azure DevOps", provider: "azure_devops", status: "coming_soon" },
   ],
 };
 
@@ -170,85 +160,47 @@ export const mockBlockers: Blocker[] = [
 ];
 
 export const mockWeeklyMetrics: WeeklyMetric[] = [
-  {
-    week: "Apr 7",
-    shippedUpdates: 8,
-    stuckPRs: 3,
-    openBugs: 8,
-    blockers: 1,
-    healthScore: 88,
-    reviewBottlenecks: 3,
-  },
-  {
-    week: "Apr 14",
-    shippedUpdates: 10,
-    stuckPRs: 4,
-    openBugs: 9,
-    blockers: 2,
-    healthScore: 85,
-    reviewBottlenecks: 4,
-  },
-  {
-    week: "Apr 21",
-    shippedUpdates: 9,
-    stuckPRs: 5,
-    openBugs: 11,
-    blockers: 2,
-    healthScore: 80,
-    reviewBottlenecks: 5,
-  },
-  {
-    week: "Apr 28",
-    shippedUpdates: 12,
-    stuckPRs: 7,
-    openBugs: 13,
-    blockers: 3,
-    healthScore: 76,
-    reviewBottlenecks: 7,
-  },
+  { week: "Apr 7",  shippedUpdates: 8,  stuckPRs: 3, openBugs: 8,  blockers: 1, healthScore: 88, reviewBottlenecks: 3 },
+  { week: "Apr 14", shippedUpdates: 10, stuckPRs: 4, openBugs: 9,  blockers: 2, healthScore: 85, reviewBottlenecks: 4 },
+  { week: "Apr 21", shippedUpdates: 9,  stuckPRs: 5, openBugs: 11, blockers: 2, healthScore: 80, reviewBottlenecks: 5 },
+  { week: "Apr 28", shippedUpdates: 12, stuckPRs: 7, openBugs: 13, blockers: 3, healthScore: 76, reviewBottlenecks: 7 },
 ];
 
 export const mockBoardAnswers: BoardAnswer[] = [
   {
     id: "ba1",
     question: "Are we moving fast enough?",
-    answer:
-      "Yes, but review delays are beginning to reduce momentum. The team shipped 12 updates this week — a strong number.",
+    answer: "Yes, but review delays are beginning to reduce momentum. The team shipped 12 updates this week — a strong number.",
     status: "green",
   },
   {
     id: "ba2",
     question: "What slowed the team down this week?",
-    answer:
-      "The biggest delay came from pull requests waiting more than two days for review, primarily in api-service.",
+    answer: "The biggest delay came from pull requests waiting more than two days for review, primarily in api-service.",
     status: "yellow",
   },
   {
     id: "ba3",
     question: "Are bugs increasing?",
-    answer:
-      "Bug pressure is stable overall, but mobile-app has three new high-priority issues that need attention before the next release.",
+    answer: "Bug pressure is stable overall, but mobile-app has three new high-priority issues that need attention before the next release.",
     status: "yellow",
   },
   {
     id: "ba4",
     question: "Which area needs leadership attention?",
-    answer:
-      "api-service needs clearer review ownership. Four pull requests have been waiting more than 48 hours for feedback.",
+    answer: "api-service needs clearer review ownership. Four pull requests have been waiting more than 48 hours for feedback.",
     status: "red",
   },
   {
     id: "ba5",
     question: "What shipped this week?",
-    answer:
-      "The team merged 12 meaningful updates across web-app, api-service, and mobile-app. A strong delivery week.",
+    answer: "The team merged 12 meaningful updates across web-app, api-service, and mobile-app. A strong delivery week.",
     status: "green",
   },
   {
     id: "ba6",
     question: "What should we ask engineering next?",
-    answer:
-      "Ask who owns review coverage for api-service and whether the mobile bugs affect the next planned release date.",
+    answer: "Ask who owns review coverage for api-service and whether the mobile bugs affect the next planned release date.",
     status: "yellow",
   },
 ];
@@ -261,14 +213,10 @@ export const mockKpiCards: KpiCard[] = [
     trend: "+18% vs last week",
     trendDirection: "up",
     trendPositive: true,
-    explanation:
-      "How consistently the team is getting completed work merged and released.",
-    whyItMatters:
-      "Shipping speed tells you whether the team is translating work into delivered value. Slowing shipping often signals review bottlenecks or unclear priorities.",
-    whatChanged:
-      "The team merged 12 updates this week, up from 9 last week. web-app and api-service drove most of the increase.",
-    leadershipQuestion:
-      "What enabled the team to ship more this week? Can we sustain this pace next week?",
+    explanation: "How consistently the team is getting completed work merged and released.",
+    whyItMatters: "Shipping speed tells you whether the team is translating work into delivered value. Slowing shipping often signals review bottlenecks or unclear priorities.",
+    whatChanged: "The team merged 12 updates this week, up from 9 last week. web-app and api-service drove most of the increase.",
+    leadershipQuestion: "What enabled the team to ship more this week? Can we sustain this pace next week?",
   },
   {
     id: "k2",
@@ -277,14 +225,10 @@ export const mockKpiCards: KpiCard[] = [
     trend: "3 more than last week",
     trendDirection: "up",
     trendPositive: false,
-    explanation:
-      "Where work is waiting too long for feedback or approval from teammates.",
-    whyItMatters:
-      "When pull requests wait too long, completed work cannot reach production. This delays delivery and creates frustration for the engineering team.",
-    whatChanged:
-      "Review bottlenecks increased from 4 last week to 7 this week. api-service accounts for 4 of the 7 stuck pull requests.",
-    leadershipQuestion:
-      "Who owns review coverage in api-service? Is there a capacity issue or an ownership gap?",
+    explanation: "Where work is waiting too long for feedback or approval from teammates.",
+    whyItMatters: "When pull requests wait too long, completed work cannot reach production. This delays delivery and creates frustration for the engineering team.",
+    whatChanged: "Review bottlenecks increased from 4 last week to 7 this week. api-service accounts for 4 of the 7 stuck pull requests.",
+    leadershipQuestion: "Who owns review coverage in api-service? Is there a capacity issue or an ownership gap?",
   },
   {
     id: "k3",
@@ -293,14 +237,10 @@ export const mockKpiCards: KpiCard[] = [
     trend: "Stable overall",
     trendDirection: "stable",
     trendPositive: true,
-    explanation:
-      "Whether bug-related work is growing faster than feature delivery.",
-    whyItMatters:
-      "Rising bug pressure often signals quality issues building up before a release. Catching it early prevents larger disruptions.",
-    whatChanged:
-      "Overall bug pressure is stable, but mobile-app saw 3 new high-priority bug reports this week, which is above average.",
-    leadershipQuestion:
-      "Are the mobile bugs affecting the next planned release? Should we delay or scope down?",
+    explanation: "Whether bug-related work is growing faster than feature delivery.",
+    whyItMatters: "Rising bug pressure often signals quality issues building up before a release. Catching it early prevents larger disruptions.",
+    whatChanged: "Overall bug pressure is stable, but mobile-app saw 3 new high-priority bug reports this week, which is above average.",
+    leadershipQuestion: "Are the mobile bugs affecting the next planned release? Should we delay or scope down?",
   },
   {
     id: "k4",
@@ -309,14 +249,10 @@ export const mockKpiCards: KpiCard[] = [
     trend: "Slightly down",
     trendDirection: "down",
     trendPositive: false,
-    explanation:
-      "How likely the team is to maintain current delivery pace next week based on current blockers and trends.",
-    whyItMatters:
-      "Delivery confidence gives you an early signal of whether current risks and blockers will affect next week's output.",
-    whatChanged:
-      "Confidence dropped from 84% last week due to increasing review delays and mobile bug pressure. No critical blockers yet.",
-    leadershipQuestion:
-      "What would need to change this week to restore confidence to above 85%?",
+    explanation: "How likely the team is to maintain current delivery pace next week based on current blockers and trends.",
+    whyItMatters: "Delivery confidence gives you an early signal of whether current risks and blockers will affect next week's output.",
+    whatChanged: "Confidence dropped from 84% last week due to increasing review delays and mobile bug pressure. No critical blockers yet.",
+    leadershipQuestion: "What would need to change this week to restore confidence to above 85%?",
   },
 ];
 
@@ -471,12 +407,12 @@ export const mockTestCoverage = {
   overallTrend: "+2% this month",
   overallTrendPositive: true,
   byRepo: [
-    { repo: "web-app", coverage: 84, trend: "+3%", trendPositive: true, healthStatus: "healthy" as const },
-    { repo: "api-service", coverage: 68, trend: "+1%", trendPositive: true, healthStatus: "watch" as const },
-    { repo: "mobile-app", coverage: 52, trend: "−2%", trendPositive: false, healthStatus: "at_risk" as const },
-    { repo: "payment-service", coverage: 78, trend: "0%", trendPositive: true, healthStatus: "healthy" as const },
-    { repo: "infrastructure", coverage: 91, trend: "+1%", trendPositive: true, healthStatus: "healthy" as const },
-    { repo: "internal-tools", coverage: 45, trend: "−5%", trendPositive: false, healthStatus: "at_risk" as const },
+    { repo: "web-app",          coverage: 84, trend: "+3%",  trendPositive: true,  healthStatus: "healthy"  as const },
+    { repo: "api-service",      coverage: 68, trend: "+1%",  trendPositive: true,  healthStatus: "watch"    as const },
+    { repo: "mobile-app",       coverage: 52, trend: "−2%",  trendPositive: false, healthStatus: "at_risk"  as const },
+    { repo: "payment-service",  coverage: 78, trend: "0%",   trendPositive: true,  healthStatus: "healthy"  as const },
+    { repo: "infrastructure",   coverage: 91, trend: "+1%",  trendPositive: true,  healthStatus: "healthy"  as const },
+    { repo: "internal-tools",   coverage: 45, trend: "−5%",  trendPositive: false, healthStatus: "at_risk"  as const },
   ],
 };
 
@@ -485,28 +421,28 @@ export const mockQaBoardAnswers: BoardAnswer[] = [
     id: "qa1",
     question: "Is our test coverage improving?",
     answer:
-      "Overall coverage reached 71% this week, up 2% month-over-month. web-app and payment-service are in good shape. mobile-app is the weak spot at 52% and trending down — a quality risk ahead of the next release.",
+      "Overall coverage reached 71% — up 2% month-over-month. web-app and payment-service are healthy. mobile-app is the weak spot at 52% and declining, which is a quality risk ahead of the upcoming iOS release.",
     status: "yellow",
   },
   {
     id: "qa2",
     question: "Are our builds reliable?",
     answer:
-      "CI/CD pass rate is 94% — up from 91% last week. Three build failures occurred this week, all resolved within an hour. Flaky test rate has dropped to 2.1%. Build reliability is improving.",
+      "CI/CD pass rate is 94% — up from 91% last week. Three build failures occurred this week, all resolved within 62 minutes. Flaky test rate has dropped to 2.1%. Build reliability is improving.",
     status: "green",
   },
   {
     id: "qa3",
     question: "How fast do we ship to production?",
     answer:
-      "The team deployed 8 times this week — up from 6. Mean time to recovery is 47 minutes, down from 58 minutes last week. Deployment cadence and recovery speed are both moving in the right direction.",
+      "8 production deploys this week — up from 6. Mean time to recovery is 47 minutes, down from 58. Deployment cadence and recovery speed are both moving in the right direction.",
     status: "green",
   },
   {
     id: "qa4",
     question: "Where is quality risk highest?",
     answer:
-      "mobile-app carries the most quality risk this week: test coverage is 52% (declining), 3 high-priority bugs are open, and CI builds are taking 40% longer than average. Leadership should ask whether the release timeline should be adjusted.",
+      "mobile-app carries the most quality risk: 52% test coverage (declining), 1 P0 bug open, and CI builds 40% slower than average. Recommend adjusting release timeline or scoping down before the iOS release.",
     status: "red",
   },
 ];
@@ -520,12 +456,9 @@ export const mockKpiCardsQuality: KpiCard[] = [
     trendDirection: "up",
     trendPositive: true,
     explanation: "Percentage of CI/CD pipeline runs that pass without failure across all repositories.",
-    whyItMatters:
-      "A high pass rate means engineers spend less time firefighting broken builds and more time shipping features. Below 90% is a signal of systemic quality issues.",
-    whatChanged:
-      "Pass rate improved from 91% to 94% this week. Three failures occurred in mobile-app, api-service, and payment-service — all resolved within an hour.",
-    leadershipQuestion:
-      "Are there specific repositories or branches that account for most failures? Is flaky test cleanup on the roadmap?",
+    whyItMatters: "A high pass rate means engineers spend less time on broken builds and more time shipping. Below 90% is a signal of systemic quality issues.",
+    whatChanged: "Pass rate improved from 91% to 94%. Three failures occurred in mobile-app, api-service, and payment-service — all resolved within an hour.",
+    leadershipQuestion: "Are there specific repositories driving most failures? Is flaky test cleanup on the roadmap?",
   },
   {
     id: "kq2",
@@ -535,12 +468,9 @@ export const mockKpiCardsQuality: KpiCard[] = [
     trendDirection: "up",
     trendPositive: true,
     explanation: "Average test coverage across all tracked repositories, weighted by codebase size.",
-    whyItMatters:
-      "Consistent test coverage reduces the risk of regressions reaching production. A declining trend in a specific repo ahead of a release is an early warning sign.",
-    whatChanged:
-      "Overall coverage improved by 2% this month. web-app improved to 84%. mobile-app declined to 52% — the lowest across all repos — which is concerning before the upcoming iOS release.",
-    leadershipQuestion:
-      "Is there a coverage target agreed with the team? Should we pause feature work in mobile-app to close the coverage gap before the release?",
+    whyItMatters: "Consistent test coverage reduces regression risk. A declining trend in a specific repo ahead of a release is an early warning sign.",
+    whatChanged: "Overall coverage improved 2% this month. web-app improved to 84%. mobile-app declined to 52% — the lowest across all repos.",
+    leadershipQuestion: "Is there a coverage target agreed with the team? Should we pause features in mobile-app to close the gap before the release?",
   },
   {
     id: "kq3",
@@ -550,12 +480,9 @@ export const mockKpiCardsQuality: KpiCard[] = [
     trendDirection: "up",
     trendPositive: true,
     explanation: "Number of times the team successfully deployed to production this week.",
-    whyItMatters:
-      "Higher deployment frequency means smaller batches of risk, faster feedback, and more confidence in the release process. Teams that deploy often tend to recover faster from issues.",
-    whatChanged:
-      "The team deployed 8 times this week across 4 services — up from 6. web-app and api-service accounted for 6 of the 8 deploys.",
-    leadershipQuestion:
-      "Are deployments gated by a manual process that could be automated? What's blocking daily deploys for mobile-app?",
+    whyItMatters: "Higher deployment frequency means smaller risk batches and faster feedback. Teams that deploy often recover faster from incidents.",
+    whatChanged: "8 deploys across 4 services — up from 6. web-app and api-service accounted for 6 of the 8.",
+    leadershipQuestion: "Are deployments gated by a manual process that could be automated? What blocks daily deploys for mobile-app?",
   },
   {
     id: "kq4",
@@ -565,11 +492,87 @@ export const mockKpiCardsQuality: KpiCard[] = [
     trendDirection: "down",
     trendPositive: true,
     explanation: "Average time to restore a passing build after a CI/CD failure, across all repositories.",
-    whyItMatters:
-      "Faster recovery means engineers stay unblocked. A rising MTTR signals that build failures are becoming harder to diagnose — often due to test complexity or unclear ownership.",
-    whatChanged:
-      "MTTR improved from 58 to 47 minutes. The longest recovery was 62 minutes in mobile-app due to a test timeout. The fastest was 18 minutes in api-service.",
-    leadershipQuestion:
-      "Is there an on-call rotation for build failures? Who owns CI/CD reliability for mobile-app?",
+    whyItMatters: "Faster recovery means engineers stay unblocked. Rising MTTR signals builds are becoming harder to diagnose.",
+    whatChanged: "MTTR improved from 58 to 47 minutes. The longest recovery was 62 minutes in mobile-app due to a test timeout.",
+    leadershipQuestion: "Is there an on-call rotation for build failures? Who owns CI/CD reliability for mobile-app?",
   },
 ];
+
+// ── Release Readiness mock data ───────────────────────────────────────────────
+
+export const mockReleaseReadiness = {
+  version: "v2.4.0",
+  targetDate: "May 12, 2026",
+  overallStatus: "hold" as "go" | "caution" | "hold",
+  gatesPassing: 3,
+  gatesTotal: 5,
+  leadershipSummary:
+    "2 of 5 release gates are failing. Mobile has a P0 bug open and payment-service has a PR stuck for 3 days. Safe to release only after these two issues close.",
+  managerSummary:
+    "gate:coverage PASS (71%), gate:ci PASS (94%), gate:p0-bugs FAIL (1 open in mobile-app), gate:stuck-prs FAIL (payment-service, 72h), gate:activity PASS.",
+  gates: [
+    {
+      id: "g1",
+      name: "Test coverage ≥70%",
+      status: "pass" as const,
+      detail: "Overall 71% — web-app 84%, payment-service 78%. mobile-app 52% (warning but not blocking).",
+      category: "quality",
+    },
+    {
+      id: "g2",
+      name: "No P0 / P1 bugs open",
+      status: "fail" as const,
+      detail: "mobile-app has 1 P0 open: iOS crash on login screen. Reopened twice this week.",
+      category: "quality",
+    },
+    {
+      id: "g3",
+      name: "CI pass rate ≥90%",
+      status: "pass" as const,
+      detail: "94% this week. 3 failures — all resolved within 62 minutes. No recurring failures.",
+      category: "ci",
+    },
+    {
+      id: "g4",
+      name: "No PRs stuck >3 days",
+      status: "fail" as const,
+      detail: "payment-service: 'Add checkout flow improvements' has been waiting 72h for a reviewer.",
+      category: "review",
+    },
+    {
+      id: "g5",
+      name: "All core repos active",
+      status: "pass" as const,
+      detail: "6 of 6 tracked repositories had activity in the last 7 days.",
+      category: "activity",
+    },
+  ],
+  repoReadiness: [
+    { repo: "web-app",         status: "ready"     as const, coverage: 84, ciRate: 98, openBugs: 0, stuckPRs: 0, note: "All gates pass." },
+    { repo: "api-service",     status: "caution"   as const, coverage: 68, ciRate: 92, openBugs: 1, stuckPRs: 4, note: "4 stuck PRs need review — low risk but slows delivery." },
+    { repo: "mobile-app",      status: "not_ready" as const, coverage: 52, ciRate: 87, openBugs: 6, stuckPRs: 2, note: "P0 bug open + coverage below threshold. Release blocker." },
+    { repo: "payment-service", status: "caution"   as const, coverage: 78, ciRate: 96, openBugs: 1, stuckPRs: 1, note: "PR stuck 72h — blocks gate:stuck-prs." },
+    { repo: "infrastructure",  status: "ready"     as const, coverage: 91, ciRate: 100, openBugs: 0, stuckPRs: 0, note: "Fully clear." },
+    { repo: "internal-tools",  status: "ready"     as const, coverage: 45, ciRate: 100, openBugs: 1, stuckPRs: 0, note: "Low coverage but not release-blocking." },
+  ],
+  actions: [
+    {
+      priority: "critical" as const,
+      action: "Resolve P0 iOS crash in mobile-app before release",
+      owner: "James Park",
+      repo: "mobile-app",
+    },
+    {
+      priority: "high" as const,
+      action: "Assign reviewer to payment-service PR (72h old)",
+      owner: "Team lead",
+      repo: "payment-service",
+    },
+    {
+      priority: "medium" as const,
+      action: "Raise api-service test coverage to ≥70% before next sprint",
+      owner: "Marcus Lee",
+      repo: "api-service",
+    },
+  ],
+};
