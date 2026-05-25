@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSelector } from "@/components/common/LanguageSelector";
+import { mockWeeklyReport } from "@/lib/mock-data";
 import {
   Share2,
   ChevronDown,
@@ -83,7 +84,7 @@ export function TopNav() {
         {/* Right actions */}
         <div className="flex items-center gap-2">
           <span className="hidden sm:block text-xs text-slate-400 dark:text-slate-500 mr-1 font-medium">
-            May 5, 2026
+            {mockWeeklyReport.generatedAt}
           </span>
           <LanguageSelector compact />
           <ThemeToggle />

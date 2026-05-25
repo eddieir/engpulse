@@ -20,7 +20,7 @@ import {
   mockReleaseReadiness,
   mockCiCdMetrics,
 } from "@/lib/mock-data";
-import { ArrowRight, RefreshCw, CheckCircle2, XCircle, Flag } from "lucide-react";
+import { ArrowRight, RefreshCw, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePersona } from "@/contexts/PersonaContext";
 
@@ -111,7 +111,7 @@ export default function DashboardPage() {
               { label: "Merged PRs", value: "23" },
               { label: "Open Issues", value: "18" },
               { label: "Avg Review Time", value: "38h" },
-              { label: d.weeklyReport, value: "12" },
+              { label: "Shipped Updates", value: "12" },
             ].map((stat) => (
               <div key={stat.label}>
                 <p className="text-xs text-slate-400 dark:text-slate-500">{stat.label}</p>

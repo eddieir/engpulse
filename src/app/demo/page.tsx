@@ -175,10 +175,10 @@ export default function DemoPage() {
           {/* CI summary row */}
           <div className="mt-4 grid sm:grid-cols-4 gap-3">
             {[
-              { label: "CI Pass Rate", value: `${mockCiCdMetrics.passRate}%`, trend: mockCiCdMetrics.passRateTrend, pos: true },
-              { label: "Deploys this week", value: `${mockCiCdMetrics.deploymentFrequency}`, trend: mockCiCdMetrics.deploymentTrend, pos: true },
-              { label: "Mean time to recovery", value: `${mockCiCdMetrics.mttrMinutes} min`, trend: mockCiCdMetrics.mttrTrend, pos: true },
-              { label: "Flaky test rate", value: `${mockCiCdMetrics.flakeRate}%`, trend: mockCiCdMetrics.flakeRateTrend, pos: true },
+              { label: "CI Pass Rate", value: `${mockCiCdMetrics.passRate}%`, trend: mockCiCdMetrics.passRateTrend, pos: mockCiCdMetrics.passRateTrendPositive },
+              { label: "Deploys this week", value: `${mockCiCdMetrics.deploymentFrequency}`, trend: mockCiCdMetrics.deploymentTrend, pos: mockCiCdMetrics.deploymentTrendPositive },
+              { label: "Mean time to recovery", value: `${mockCiCdMetrics.mttrMinutes} min`, trend: mockCiCdMetrics.mttrTrend, pos: mockCiCdMetrics.mttrTrendPositive },
+              { label: "Flaky test rate", value: `${mockCiCdMetrics.flakeRate}%`, trend: mockCiCdMetrics.flakeRateTrend, pos: mockCiCdMetrics.flakeRateTrendPositive },
             ].map((s) => (
               <div key={s.label} className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3">
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{s.label}</p>

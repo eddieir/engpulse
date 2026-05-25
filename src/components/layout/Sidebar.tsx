@@ -16,6 +16,7 @@ import {
   Flag,
 } from "lucide-react";
 import { usePersona } from "@/contexts/PersonaContext";
+import { mockBlockers } from "@/lib/mock-data";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -27,6 +28,8 @@ const navItems = [
   { href: "/dashboard/trends", label: "Trends", icon: TrendingUp },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
+
+const blockerCount = mockBlockers.filter((b) => b.severity === "high" || b.severity === "medium").length;
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -71,8 +74,8 @@ export function Sidebar() {
             >
               <item.icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500")} />
               {item.label}
-              {item.label === "Blockers" && (
-                <span className="ml-auto flex-shrink-0 text-xs bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full font-medium">3</span>
+              {item.label === "Blockers" && blockerCount > 0 && (
+                <span className="ml-auto flex-shrink-0 text-xs bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full font-medium">{blockerCount}</span>
               )}
             </Link>
           );
