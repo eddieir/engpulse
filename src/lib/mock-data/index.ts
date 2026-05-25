@@ -418,3 +418,158 @@ export const mockIssues: Issue[] = [
     createdAt: "2026-04-28",
   },
 ];
+
+// ── QA & CI/CD mock data ──────────────────────────────────────────────────────
+
+export const mockCiCdMetrics = {
+  passRate: 94,
+  passRateTrend: "+3% vs last week",
+  passRateTrendDirection: "up" as const,
+  passRateTrendPositive: true,
+  deploymentFrequency: 8,
+  deploymentTrend: "+2 vs last week",
+  deploymentTrendPositive: true,
+  mttrMinutes: 47,
+  mttrTrend: "−11 min vs last week",
+  mttrTrendPositive: true,
+  flakeRate: 2.1,
+  flakeRateTrend: "−0.4% vs last week",
+  flakeRateTrendPositive: true,
+  failedBuilds: [
+    {
+      id: "fb1",
+      repo: "mobile-app",
+      branch: "feature/ios-auth-fix",
+      failedAt: "May 5, 14:22",
+      reason: "iOS test suite timeout (exceeded 10 min limit)",
+      recoveredMinutes: 62,
+      status: "resolved" as const,
+    },
+    {
+      id: "fb2",
+      repo: "api-service",
+      branch: "fix/cache-invalidation",
+      failedAt: "May 3, 09:15",
+      reason: "Flaky integration test: TestPaymentWebhookRetry",
+      recoveredMinutes: 18,
+      status: "resolved" as const,
+    },
+    {
+      id: "fb3",
+      repo: "payment-service",
+      branch: "main",
+      failedAt: "May 2, 22:41",
+      reason: "Missing env var in staging deploy",
+      recoveredMinutes: 34,
+      status: "resolved" as const,
+    },
+  ],
+};
+
+export const mockTestCoverage = {
+  overall: 71,
+  overallTrend: "+2% this month",
+  overallTrendPositive: true,
+  byRepo: [
+    { repo: "web-app", coverage: 84, trend: "+3%", trendPositive: true, healthStatus: "healthy" as const },
+    { repo: "api-service", coverage: 68, trend: "+1%", trendPositive: true, healthStatus: "watch" as const },
+    { repo: "mobile-app", coverage: 52, trend: "−2%", trendPositive: false, healthStatus: "at_risk" as const },
+    { repo: "payment-service", coverage: 78, trend: "0%", trendPositive: true, healthStatus: "healthy" as const },
+    { repo: "infrastructure", coverage: 91, trend: "+1%", trendPositive: true, healthStatus: "healthy" as const },
+    { repo: "internal-tools", coverage: 45, trend: "−5%", trendPositive: false, healthStatus: "at_risk" as const },
+  ],
+};
+
+export const mockQaBoardAnswers: BoardAnswer[] = [
+  {
+    id: "qa1",
+    question: "Is our test coverage improving?",
+    answer:
+      "Overall coverage reached 71% this week, up 2% month-over-month. web-app and payment-service are in good shape. mobile-app is the weak spot at 52% and trending down — a quality risk ahead of the next release.",
+    status: "yellow",
+  },
+  {
+    id: "qa2",
+    question: "Are our builds reliable?",
+    answer:
+      "CI/CD pass rate is 94% — up from 91% last week. Three build failures occurred this week, all resolved within an hour. Flaky test rate has dropped to 2.1%. Build reliability is improving.",
+    status: "green",
+  },
+  {
+    id: "qa3",
+    question: "How fast do we ship to production?",
+    answer:
+      "The team deployed 8 times this week — up from 6. Mean time to recovery is 47 minutes, down from 58 minutes last week. Deployment cadence and recovery speed are both moving in the right direction.",
+    status: "green",
+  },
+  {
+    id: "qa4",
+    question: "Where is quality risk highest?",
+    answer:
+      "mobile-app carries the most quality risk this week: test coverage is 52% (declining), 3 high-priority bugs are open, and CI builds are taking 40% longer than average. Leadership should ask whether the release timeline should be adjusted.",
+    status: "red",
+  },
+];
+
+export const mockKpiCardsQuality: KpiCard[] = [
+  {
+    id: "kq1",
+    label: "CI/CD Pass Rate",
+    value: "94%",
+    trend: "+3% vs last week",
+    trendDirection: "up",
+    trendPositive: true,
+    explanation: "Percentage of CI/CD pipeline runs that pass without failure across all repositories.",
+    whyItMatters:
+      "A high pass rate means engineers spend less time firefighting broken builds and more time shipping features. Below 90% is a signal of systemic quality issues.",
+    whatChanged:
+      "Pass rate improved from 91% to 94% this week. Three failures occurred in mobile-app, api-service, and payment-service — all resolved within an hour.",
+    leadershipQuestion:
+      "Are there specific repositories or branches that account for most failures? Is flaky test cleanup on the roadmap?",
+  },
+  {
+    id: "kq2",
+    label: "Test Coverage",
+    value: "71%",
+    trend: "+2% this month",
+    trendDirection: "up",
+    trendPositive: true,
+    explanation: "Average test coverage across all tracked repositories, weighted by codebase size.",
+    whyItMatters:
+      "Consistent test coverage reduces the risk of regressions reaching production. A declining trend in a specific repo ahead of a release is an early warning sign.",
+    whatChanged:
+      "Overall coverage improved by 2% this month. web-app improved to 84%. mobile-app declined to 52% — the lowest across all repos — which is concerning before the upcoming iOS release.",
+    leadershipQuestion:
+      "Is there a coverage target agreed with the team? Should we pause feature work in mobile-app to close the coverage gap before the release?",
+  },
+  {
+    id: "kq3",
+    label: "Deployment Frequency",
+    value: "8 deploys",
+    trend: "+2 vs last week",
+    trendDirection: "up",
+    trendPositive: true,
+    explanation: "Number of times the team successfully deployed to production this week.",
+    whyItMatters:
+      "Higher deployment frequency means smaller batches of risk, faster feedback, and more confidence in the release process. Teams that deploy often tend to recover faster from issues.",
+    whatChanged:
+      "The team deployed 8 times this week across 4 services — up from 6. web-app and api-service accounted for 6 of the 8 deploys.",
+    leadershipQuestion:
+      "Are deployments gated by a manual process that could be automated? What's blocking daily deploys for mobile-app?",
+  },
+  {
+    id: "kq4",
+    label: "Mean Time to Recovery",
+    value: "47 min",
+    trend: "−11 min vs last week",
+    trendDirection: "down",
+    trendPositive: true,
+    explanation: "Average time to restore a passing build after a CI/CD failure, across all repositories.",
+    whyItMatters:
+      "Faster recovery means engineers stay unblocked. A rising MTTR signals that build failures are becoming harder to diagnose — often due to test complexity or unclear ownership.",
+    whatChanged:
+      "MTTR improved from 58 to 47 minutes. The longest recovery was 62 minutes in mobile-app due to a test timeout. The fastest was 18 minutes in api-service.",
+    leadershipQuestion:
+      "Is there an on-call rotation for build failures? Who owns CI/CD reliability for mobile-app?",
+  },
+];

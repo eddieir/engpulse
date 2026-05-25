@@ -12,6 +12,7 @@ import {
   Settings,
   Zap,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/dashboard/repositories", label: "Repositories", icon: GitBranch },
   { href: "/dashboard/report", label: "Weekly Report", icon: FileText },
   { href: "/dashboard/blockers", label: "Blockers", icon: AlertTriangle },
+  { href: "/dashboard/quality", label: "QA & CI/CD", icon: ShieldCheck },
   { href: "/dashboard/trends", label: "Trends", icon: TrendingUp },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
