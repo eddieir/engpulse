@@ -15,15 +15,22 @@ import {
   TrendingUp,
   Settings,
   Zap,
+  ShieldCheck,
+  Flag,
+  Users,
+  Crown,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { usePersona } from "@/contexts/PersonaContext";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/repositories", label: "Repositories", icon: GitBranch },
   { href: "/dashboard/report", label: "Weekly Report", icon: FileText },
   { href: "/dashboard/blockers", label: "Blockers", icon: AlertTriangle },
+  { href: "/dashboard/quality", label: "QA & CI/CD", icon: ShieldCheck },
+  { href: "/dashboard/release", label: "Release Readiness", icon: Flag },
   { href: "/dashboard/trends", label: "Trends", icon: TrendingUp },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
@@ -31,6 +38,7 @@ const navItems = [
 export function TopNav() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { persona, setPersona } = usePersona();
 
   return (
     <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800">
@@ -54,7 +62,21 @@ export function TopNav() {
           <div className="hidden lg:flex items-center gap-2 text-sm">
             <span className="font-semibold text-slate-900 dark:text-white">Acme Cloud</span>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-500 dark:text-slate-400">Engineering Leadership</span>
+            <span className="text-slate-500 dark:text-slate-400">
+              {persona === "leadership" ? "Engineering Leadership" : "Engineering Manager"}
+            </span>
+            <button
+              onClick={() => setPersona(persona === "leadership" ? "manager" : "leadership")}
+              className={cn(
+                "ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold transition-colors",
+                persona === "leadership"
+                  ? "bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-900/50"
+                  : "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50"
+              )}
+            >
+              {persona === "leadership" ? <Crown className="w-3 h-3" /> : <Users className="w-3 h-3" />}
+              {persona === "leadership" ? "Leadership" : "Manager"}
+            </button>
           </div>
         </div>
 

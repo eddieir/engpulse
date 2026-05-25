@@ -14,6 +14,7 @@ import { CtaSection } from "@/components/landing/CtaSection";
 import { HomepageFaqSection } from "@/components/landing/HomepageFaqSection";
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
 import { WhyEngPulseSection } from "@/components/landing/WhyEngPulseSection";
+import { DualPersonaSection } from "@/components/landing/DualPersonaSection";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://engplus.netlify.app";
 
@@ -92,6 +93,7 @@ export default function LandingPage() {
         <SocialProofSection />
         <PainSection />
         <WhyEngPulseSection />
+        <DualPersonaSection />
         <TransformationSection />
         <BoardAnswersSection />
         <TestimonialsSection />
