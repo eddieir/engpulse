@@ -83,11 +83,7 @@ export function BetaPageClient() {
     track("beta_submitted", { plan: form.selected_plan, role: form.role });
 
     try {
-      const base = process.env.NEXT_PUBLIC_NETLIFY_FUNCTIONS_BASE || "";
-      const endpoint = base
-        ? `${base}/beta-request`
-        : "/api/beta/submit";
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/beta/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
